@@ -4,3 +4,5 @@ This way we can keep the sensitive info in our workspace and only push the updat
 where we can then download onto our personal device without worrying about adding our info back
 '''
 WEBHOOK_URL = ""
+EMAIL = ""
+PASSWORD = ""
