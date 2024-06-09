@@ -5,6 +5,8 @@ from datetime import date
 import os
 import time
 
+from auth import EMAIL, PASSWORD
+
 # Concern: Gridview searches list completed this month, so what happens if yesterday was the last day of the month
 def getDate():
     months = {
@@ -28,12 +30,10 @@ driver = webdriver.Chrome()
 driver.get("https://app.joltup.com/account#/login")
 time.sleep(3)            # Give time for dynamic elements to load  
 
-emailAdd = 'insertEmail'
-password = 'insertPassword'
 desired_list = "listName"
 
-driver.find_element(By.ID, "emailAddress").send_keys(emailAdd)
-driver.find_element(By.ID, "password").send_keys(password, Keys.ENTER)
+driver.find_element(By.ID, "emailAddress").send_keys(EMAIL)
+driver.find_element(By.ID, "password").send_keys(PASSWORD, Keys.ENTER)
 time.sleep(4)
 
 driver.get("https://app.joltup.com/review/review/listResultsReporting/listDetails")
