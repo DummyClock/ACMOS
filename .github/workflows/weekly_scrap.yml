@@ -1,0 +1,41 @@
+name: Run Jolt Scrapper Script
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Runs some time every Sunday (UTC Time)
+  workflow_dispatch:
+
+jobs:
+  run-selenium:
+    runs-on: windows-latest
+
+    services:
+      chrome:
+        image: selenium/standalone-chrome
+        ports:
+          - 4444:4444
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Run Selenium script
+        uses: actions/setup-python@v2
+        with:
+          python-versions: '3.12.4'
+
+      - name: Install dependencies
+        run: | 
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Selenium script
+        env:
+          DISPLAY: ":99"
+          EMAIL: ${{ secrets.EMAIL }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          Xvfb :99 -ac &
+        
