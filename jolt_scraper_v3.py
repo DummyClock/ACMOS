@@ -9,8 +9,8 @@ import time
 # from auth import EMAIL, PASSWORD
 
 # Gets hidden values from Github Secrets - (Remove this block when testing on a locally)
-EMAIL = os.environ{'EMAIL'}
-PASSWORD = os.environ{'PASSWORD'}
+EMAIL = os.environ['EMAIL']
+PASSWORD = os.environ['PASSWORD']
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
     #Get the default one-week-period dates
