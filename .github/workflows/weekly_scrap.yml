@@ -17,19 +17,21 @@ jobs:
         with:
           python-versions: '3.12.4'
 
-      - name: Install dependencies
+      - name: Installing package list
+        run: apt list --installed    
+      - name: Removing previous chrome instances on runner 
+        run: sudo apt purge google-chrome-stable  
+        
+      - name: Install packages
         run: | 
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install chromedriver-autoinstaller selenium pyvirtualdisplay
+          sudo apt-get install xvfb
 
       - name: Run script
         env:
-          DISPLAY: ":99"
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-          Xvfb :99 -ac &
           python jolt_scraper_v3.py
         
