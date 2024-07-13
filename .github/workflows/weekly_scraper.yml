@@ -29,7 +29,7 @@ jobs:
           pip install -r requirements.txt
           pip install chromedriver-autoinstaller selenium pyvirtualdisplay 
           echo "Succesfully installed 1"
-          pip install gspread os time 
+          pip install gspread time 
           echo "Succesfully installed 2"
           pip install -api-python-client google-auth-httplib2 google-auth-oauthlib
           echo "Succesfully installed 3"
