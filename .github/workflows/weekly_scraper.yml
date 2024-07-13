@@ -42,7 +42,7 @@ jobs:
 
       - name: Run script
         env:  
-          # Secrets needed
+          # Secrets needed (automatically read in as string values)
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
           SERVICE_KEY_JSON_FILE: ${{ secrets.SERVICE_KEY_JSON_FILE }}
