@@ -7,6 +7,7 @@ from google.oauth2.service_account import Credentials
 import gspread
 import os
 import time
+import JSON
 
 
 # auth import EMAIL, PASSWORD, SPREADSHEET_ID, SERVICE_KEY_JSON_FILE
@@ -15,7 +16,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 # Gets hidden values from Github Secrets - (Remove this block when testing on a locally)
 EMAIL = os.environ['EMAIL']
 PASSWORD = os.environ['PASSWORD']
-SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
+SERVICE_KEY_JSON_FILE = json.loads(os.environ['SERVICE_KEY_JSON_FILE'])
 SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
