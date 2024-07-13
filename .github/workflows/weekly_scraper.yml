@@ -41,9 +41,12 @@ jobs:
           python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
 
       - name: Run script
-        env:
+        env:  
+          # Secrets needed
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
+          SERVICE_KEY_JSON_FILE: ${{ secrets.SERVICE_KEY_JSON_FILE }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
         run: |
           python jolt_scraper_v4.py
         
