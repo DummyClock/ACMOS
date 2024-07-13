@@ -15,8 +15,8 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 # Gets hidden values from Github Secrets - (Remove this block when testing on a locally)
 EMAIL = os.environ['EMAIL']
 PASSWORD = os.environ['PASSWORD']
-SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
-SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+SERVICEKEYJSONFILE = os.environ['SERVICE_KEY_JSON_FILE']
+SPREADSHEETID = os.environ['SPREADSHEET_ID']
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
     #Get the default one-week-period dates
