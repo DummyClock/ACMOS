@@ -27,7 +27,7 @@ jobs:
           echo "Attempting to install packages"
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install chromedriver-autoinstaller selenium pyvirtualdisplay google.oauth2.service_account gspread os time
+          pip install chromedriver-autoinstaller selenium pyvirtualdisplay gspread os time google-api-python-client google-auth-httplib2 google-auth-oauthlib
           echo "Succesfully installed"
         # sudo apt-get install -y xvfb
           
