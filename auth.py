@@ -6,3 +6,9 @@ where we can then download onto our personal device without worrying about addin
 WEBHOOK_URL = ""
 EMAIL = ""
 PASSWORD = ""
+
+# Necessary for jolt_scraper versions 4 and up
+SPREADSHEET_ID = ""
+SERVICE_KEY_JSON_FILE = {
+  ""
+}
