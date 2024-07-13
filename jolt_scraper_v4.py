@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 import gspread
 import os
 import time
-import JSON
+import json
 
 
 # auth import EMAIL, PASSWORD, SPREADSHEET_ID, SERVICE_KEY_JSON_FILE
