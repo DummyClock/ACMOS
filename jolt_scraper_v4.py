@@ -117,6 +117,7 @@ def editGoogleSheets(item_name, last_cleaning_date):
     # Connect to Sheets API & Google Spreadsheet
     creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
     client = gspread.authorize(creds)
+    print(SPREADSHEET_ID)
     sheet = client.open_by_key(SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
 
     # Search for the item name's row, if it doesn't exist add a new row
