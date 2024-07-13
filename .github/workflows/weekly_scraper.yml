@@ -8,6 +8,7 @@ on:
 jobs:
   scrape:
     runs-on: windows-latest
+    environment: myenvironment
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
