@@ -18,7 +18,6 @@ EMAIL = os.environ['EMAIL']
 PASSWORD = os.environ['PASSWORD']
 SERVICE_KEY_JSON_FILE = json.loads(os.environ['SERVICE_KEY_JSON_FILE'])
 SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
-print(SPREADSHEET_ID)
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
     #Get the default one-week-period dates
@@ -26,6 +25,7 @@ def downloadCSVs(listNames, startDate=None, endDate=None):
         endDate = str(date.today())
         startDate = str(date.today() - timedelta(days=7))
     print("StartDate:"+startDate+"!")
+    print("Check it:" +SPREADSHEET_ID)
 
     #Prepare download location before launching instance of webdriver in headless mode
     download_dir = os.path.dirname(os.path.realpath(__file__))+ '\\tmp'
