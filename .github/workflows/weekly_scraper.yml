@@ -41,5 +41,5 @@ jobs:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
-          python jolt_scraper_v3.py
+          python jolt_scraper_v4.py
         
