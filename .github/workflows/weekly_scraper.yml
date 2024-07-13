@@ -27,7 +27,7 @@ jobs:
           echo "Attempting to install packages"
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install chromedriver-autoinstaller selenium pyvirtualdisplay 
+          pip install chromedriver-autoinstaller selenium pyvirtualdisplay json
           echo "Succesfully installed 1"
           pip install -api-python-client google-auth-httplib2 google-auth-oauthlib time
           echo "Succesfully installed 2"
