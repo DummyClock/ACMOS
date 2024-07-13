@@ -18,6 +18,7 @@ EMAIL = os.environ['EMAIL']
 PASSWORD = os.environ['PASSWORD']
 SERVICE_KEY_JSON_FILE = json.loads(os.environ['SERVICE_KEY_JSON_FILE'])
 SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+print(SPREADSHEET_ID)
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
     #Get the default one-week-period dates
@@ -117,7 +118,6 @@ def editGoogleSheets(item_name, last_cleaning_date):
     # Connect to Sheets API & Google Spreadsheet
     creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
     client = gspread.authorize(creds)
-    print(SPREADSHEET_ID)
     sheet = client.open_by_key(SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
 
     # Search for the item name's row, if it doesn't exist add a new row
