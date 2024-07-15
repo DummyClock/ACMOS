@@ -1,5 +1,9 @@
-import requests
-import json
+import requests, json, sys, os
+
+#Add the ACMOS Directory to the system path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+#Now import the webhook
 from auth import WEBHOOK_URL
 
 #Somewhat messy but this is mostly the fully written blocks & fields, without using a package/library

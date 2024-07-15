@@ -1,3 +1,8 @@
+import sys, os
+
+#Add the ACMOS Directory to the system path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import slack_blocks
 SB = slack_blocks
 
