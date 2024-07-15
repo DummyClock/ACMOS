@@ -86,12 +86,17 @@ def dateRange(driver, startDate, endDate):
     start_field = driver.find_element(By.ID, "input-start")
     start_field.clear()
     start_field.send_keys(startDate)
+    # Trigger focus event on another element to ensure the dates are registered
+    driver.find_element(By.CLASS_NAME, "date-range-picker").click()
+    time.sleep(1)
 
     #Put in the end date
     end_field = driver.find_element(By.ID, "input-end")
     end_field.clear()
     end_field.send_keys(endDate)
-    time.sleep(2)
+    # Trigger focus event on another element to ensure the dates are registered
+    driver.find_element(By.CLASS_NAME, "date-range-picker").click()
+    time.sleep(1)
 
     #Find and click on "Done" in the Date-Range picker menu
     buttons = driver.find_element(By.CLASS_NAME, "date-range-menu").find_element(By.CLASS_NAME, "button-row").find_elements(By.CLASS_NAME, "button")
