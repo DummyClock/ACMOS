@@ -75,6 +75,7 @@ def downloadCSVs(listNames, startDate=None, endDate=None):
 
     time.sleep(1.5)
     driver.close()
+
     readCSVs(download_dir)
 
 #Function used to set the date range in Jolt's completed lists in grid view
@@ -149,6 +150,6 @@ def editGoogleSheets(item_name, last_cleaning_date):
         print("ERROR: Unable to find column with the value: 'Next Cleaning Date'")
 
 #Testing the functions. (Downloads files & lists names of downloaded files)
-listName = ["BOH Closing Checklist".lower()]
+listName = ["BOH Closing Checklist"]
 downloadCSVs(listName)
 # editGoogleSheets("Nugg", "TODAY")
