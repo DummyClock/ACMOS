@@ -77,7 +77,7 @@ def downloadCSVs(listNames, startDate=None, endDate=None):
     driver.close()
     readCSVs(download_dir)
 
-#ISSUE: Correct value is entered, but site does not store it, leaving it to reset
+#Function used to set the date range in Jolt's completed lists in grid view
 def dateRange(driver, startDate, endDate):
     driver.find_element(By.CLASS_NAME, "date-range-filter").click() #Open up date range picker
     time.sleep(2)
