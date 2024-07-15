@@ -1,6 +1,6 @@
 # ACMOS: Automated Cleaning & Maintenance Organizer & Scheduler
 
-ACMOS is a project aimed at automating the cleaning and maintenance scheduling process for your workplace. It integrates with Jolt to gather task completion data and sends out reminders and updates through Slack. This ensures that cleaning schedules are adhered to and makes it easier for the team to stay organized.
+ACMOS is a project aimed at automating the cleaning and maintenance scheduling process for our workplace. It integrates with Jolt to gather task completion data and sends out reminders and updates through Slack. This ensures that cleaning schedules are adhered to and makes it easier for the team to stay organized.
 
 ## Table of Contents
 - [Project Description](#project-description)
