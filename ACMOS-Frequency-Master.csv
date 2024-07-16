@@ -1,0 +1,45 @@
+Area/Descriptor,Task,Frequency (Days),Frequency (Words)
+Primary,Fry Fridge,60,2 Months
+Secondary,Fry Fridge,60,2 Months
+Secondary,Left Fryer Boilout,30,Monthly
+Secondary,Righ Fryer Boilout,30,Monthly
+Primary,Left Fryer Boilout,30,Monthly
+Primary,Righ Fryer Boilout,30,Monthly
+Primary,Hood Grates,30,Monthly
+Secondary,Hood Grates,30,Monthly
+Machines,Hood Grates,30,Monthly
+#1,Oven Interior,30,Monthly
+#2,Oven Interior,30,Monthly
+#1,Jet Plates,7,Weekly
+#2,Jet Plates,7,Weekly
+#1,Oven Air Filters,30,Monthly
+#2,Oven Air Filters,30,Monthly
+Primary,Toaster Deep Clean,90,Quarterly
+Secondary,Toaster Deep Clean,90,Quarterly
+Office,Toaster Deep Clean,90,Quarterly
+Primary,Delime Rethermalizer,7,Weekly
+Prep,Cold Table Air Baffle,30,Monthly
+Centerline,Cold Table Air Filter,30,Monthly
+Prep,Cold Table Air Filter,30,Monthly
+Primary,Chutes,7,Weekly
+Secondary,Chutes,7,Weekly
+Middle,Chutes,7,Weekly
+Primary,Packaging Holders,30,Monthly
+Secondary,Packaging Holders,30,Monthly
+#1,Machines Boilout,25,Monthly
+#2,Machines Boilout,25,Monthly
+#3,Machines Boilout,25,Monthly
+#4,Machines Boilout,25,Monthly
+#5,Machines Boilout,25,Monthly
+#6,Machines Boilout,25,Monthly
+Primary,Fry Carton Dispenser,30,Monthly
+Secondary,Fry Carton Dispenser,30,Monthly
+Primary,Fry Tower,180,6 Months
+Secondary,Fry Tower,180,6 Months
+Primary,Hot Table Heat Shield,180,6 Months
+Secondary,Hot Table Heat Shield,180,6 Months
+Nugget,Thaw,14,2 Weeks
+Strips/Filet,Thaw,60,2 Months
+Grilled/Spicy,Thaw,60,2 Months
+Milk Wash,Thaw,60,2 Months
+Single,Thaw,30,Monthly
