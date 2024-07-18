@@ -21,14 +21,7 @@ jobs:
         run: | 
           echo "Attempting to install packages"
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install chromedriver-autoinstaller selenium pyvirtualdisplay json
-          echo "Succesfully installed 1"
-          pip install -api-python-client google-auth-httplib2 google-auth-oauthlib time
-          echo "Succesfully installed 2"
-          pip install gspread 
-          echo "Succesfully installed 3"
-          
+          pip install -r requirements.txt          
 
       - name: Chrome setup
         run: |
