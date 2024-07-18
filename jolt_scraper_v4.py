@@ -76,7 +76,7 @@ def downloadCSVs(listNames, startDate=None, endDate=None):
     time.sleep(1.5)
     driver.close()
 
-    return os.listdir(download_dir)
+    return download_dir
 
 #Function used to set the date range in Jolt's completed lists in grid view
 def dateRange(driver, startDate, endDate):
@@ -109,5 +109,5 @@ def dateRange(driver, startDate, endDate):
 
 #Testing the functions. (Downloads files & lists names of downloaded files)
 listName = ["BOH Closing Checklist"]
-print("Files: " + str(downloadCSVs(listName)))
+print("Path: " + str(downloadCSVs(listName)))
 # editGoogleSheets("Nugg", "TODAY")
