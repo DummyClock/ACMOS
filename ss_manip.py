@@ -160,6 +160,9 @@ def calculateNextDate(date_values, freq, amount):
         constructed_date = constructed_date + relativedelta(months=amount)
     elif freq == "Quarter":
         constructed_date = constructed_date + relativedelta(months=(4*amount))
+    else:
+        print("'" + freq + "' is an unsuported frequency type. Please use 'Week', 'Month', or 'Quarter' within the 'Frequency' column of the Master Spreadsheet.")
+        return "UNABLE TO CALCULATE. Check 'Frequency' column."
 
     return str(constructed_date).split()[0]
 
