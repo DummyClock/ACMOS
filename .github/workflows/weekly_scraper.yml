@@ -16,11 +16,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.12.4'
-
-      #- name: Installing chrome stuff (linux)
-      #  run: apt list --installed    
-      #- name: Removing previous chrome instances on runner 
-      #  run: sudo apt purge google-chrome-stable  
         
       - name: Install packages
         run: | 
@@ -33,7 +28,6 @@ jobs:
           echo "Succesfully installed 2"
           pip install gspread 
           echo "Succesfully installed 3"
-        # sudo apt-get install -y xvfb
           
 
       - name: Chrome setup
@@ -47,6 +41,7 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
           SERVICE_KEY_JSON_FILE: ${{ secrets.SERVICE_KEY_JSON_FILE }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          MASTER_SPREADSHEET_ID: ${{ secrets.MASTER_SPREADSHEET_ID }}
         run: |
           python jolt_scraper_v4.py
         
