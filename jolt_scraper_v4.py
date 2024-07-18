@@ -76,7 +76,7 @@ def downloadCSVs(listNames, startDate=None, endDate=None):
     time.sleep(1.5)
     driver.close()
 
-    readCSVs(download_dir)
+    return os.listdir(download_dir)
 
 #Function used to set the date range in Jolt's completed lists in grid view
 def dateRange(driver, startDate, endDate):
@@ -107,49 +107,7 @@ def dateRange(driver, startDate, endDate):
             button.click()
     time.sleep(5)
 
-#INCOMPLETE: Currently only get's a list of the downloaded files
-def readCSVs(path):
-    files = os.listdir(path)
-    print("Downloaded Files:")
-    print(files)
-
-    # From downloaded files, retrieve data for the cleaned item & the date it was cleaned
-    item_cleaned = "Nugget Thaw Cabinet"
-    date_of_cleaning = "INSERT_DATE"
-    editGoogleSheets(item_cleaned, date_of_cleaning)
-
-#INCOMPLETE: Doesn't have a way to calculate the next cleaning date
-# Update the Google Sheet with new data
-def editGoogleSheets(item_name, last_cleaning_date):
-    # Connect to Sheets API & Google Spreadsheet
-    creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
-    client = gspread.authorize(creds)
-    sheet = client.open_by_key(SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
-
-    # Search for the item name's row, if it doesn't exist add a new row
-    try:
-        item_row = sheet.find(item_name).row
-    except AttributeError as error:
-        sheet.append_row([item_name])
-        item_row = sheet.find(item_name).row
-
-    # Update "Last Cleaning Date" column 
-    try:
-        last_cleaning_col = sheet.find("Last Cleaning Date").col
-        sheet.update_cell(item_row,last_cleaning_col, last_cleaning_date)
-    except AttributeError as error:
-        print("ERROR: Unable to find column with the value: 'Last Cleaning Date'")
-
-    # INCOMPLETE: 
-    # Update "Next Cleaning Date" column
-    try:
-        next_cleaning_date = "INSERT NEXT DATE HERE"
-        next_cleaning_col = sheet.find("Next Cleaning Date").col
-        sheet.update_cell(item_row,next_cleaning_col, next_cleaning_date)
-    except AttributeError as error:
-        print("ERROR: Unable to find column with the value: 'Next Cleaning Date'")
-
 #Testing the functions. (Downloads files & lists names of downloaded files)
 listName = ["BOH Closing Checklist"]
-downloadCSVs(listName)
+print("Files: " + str(downloadCSVs(listName)))
 # editGoogleSheets("Nugg", "TODAY")
