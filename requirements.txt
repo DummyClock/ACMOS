@@ -1,2 +1,9 @@
 selenium
 chromedriver-autoinstaller
+pyvirtualdisplay
+json
+-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+time
+gspread
