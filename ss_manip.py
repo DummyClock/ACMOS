@@ -3,13 +3,16 @@ import gspread
 import os
 import time
 from google.oauth2.service_account import Credentials
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
-# from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
+from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
 
+'''
 SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
 MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
 SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
+'''
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
@@ -76,19 +79,22 @@ def searchFrequencyMasterSheet(result_date, result_area):
             return
         
         # Get the frequency
-        frequency_col_index = sheet.find("Frequency (Days)").col      #Frequency
-        freq = int(sheet.cell(row_index, frequency_col_index).value)
+        frequency_col_index = sheet.find("Frequency").col       #Frequency
+        amount_col_index = sheet.find("Amount").col             #Amount
+        freq = sheet.cell(row_index, frequency_col_index).value
+        amount = int(sheet.cell(row_index, amount_col_index).value)
 
         # Calculate the next cleaning date
         date_values = result_date[0].split('/')
         reformatted_date = date_values[0] + '-' + date_values[1] + '-' + date_values[2]
-        next_date = str(datetime.now() + timedelta(days=freq)).split()[0]
+        next_date = calculateNextDate([int(date_values[0]), int(date_values[1]), int(date_values[2])], freq, amount)
 
         updateCleaningScheduleSheet(reformatted_date, next_date, result_area)
+
     except AttributeError as e:
         print("ERROR: Unable to find the 'Task' column and/or 'Area/Descriptor' column and/or 'C' column in the '" + client.open_by_key(MASTER_SPREADSHEET_ID).title + "' Spreadsheet.")
     except TypeError as e:
-        print("ERROR: Unable to calculate the next cleaning date. Make sure a proper integer is stored in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title + "'Frequency (Days)' columns.")
+        print("ERROR: Unable to calculate the next cleaning date. Be sure to follow the date syntax 'MM-DD-YYYY'.\n Make sure a proper date is stored in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title + "'Frequency' & 'Amount' columns.")
     except ValueError as e:
         print("ERROR: Unable to parse the date collected from the downloaded file.")
     except NameError as e:
@@ -144,6 +150,20 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area):
     except AttributeError as error:
         print("ERROR: Unable to find column with the value: 'Second to Last Cleaning Date'")
 
+#date_values: (int)[day, month, year]
+def calculateNextDate(date_values, freq, amount):
+    constructed_date = datetime(date_values[2], date_values[0], date_values[1])     #Year, Month, Day
+
+    if freq == "Week":
+        constructed_date = constructed_date + relativedelta(weeks=amount)
+    elif freq == "Month":
+        constructed_date = constructed_date + relativedelta(months=amount)
+    elif freq == "Quarter":
+        constructed_date = constructed_date + relativedelta(months=(4*amount))
+
+    return str(constructed_date).split()[0]
+
+
 
 # Test functions
 if __name__ == '__main__':
@@ -151,6 +171,7 @@ if __name__ == '__main__':
         path = os.path.dirname(os.path.realpath(__file__)) + '\\tmp'
         print(path)
         readCSVFiles(path)
+
     except gspread.exceptions.APIError as e:
         try:
             time.sleep(4)
