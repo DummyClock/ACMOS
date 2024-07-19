@@ -6,20 +6,9 @@ from google.oauth2.service_account import Credentials
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
-
-'''
-SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
-MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
-SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
-'''
-
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
-client = gspread.authorize(creds)
-
 # Will search the downloaded csv files in path for specific values
-def readCSVFiles(path):
+def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE):
+    important_results = []
     downloadedFiles = os.listdir(path)
     for f in downloadedFiles:
         #Values to search for in csv files
@@ -52,10 +41,11 @@ def readCSVFiles(path):
         else:
             result2 = df.loc[task_row_index, "Result"].to_string(index=False).split(' - ')
 
-        searchFrequencyMasterSheet(result1, result2)
+        important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
+    return important_results
 
 # Will search the Frequency Master Sheet for specific values
-def searchFrequencyMasterSheet(result_date, result_area):
+def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID):
     try:
         # Connect to Sheets API & Google Spreadsheet
         sheet = client.open_by_key(MASTER_SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
@@ -89,7 +79,7 @@ def searchFrequencyMasterSheet(result_date, result_area):
         reformatted_date = date_values[0] + '-' + date_values[1] + '-' + date_values[2]
         next_date = calculateNextDate([int(date_values[0]), int(date_values[1]), int(date_values[2])], freq, amount)
 
-        updateCleaningScheduleSheet(reformatted_date, next_date, result_area)
+        return updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID)
 
     except AttributeError as e:
         print("ERROR: Unable to find the 'Task' column and/or 'Area/Descriptor' column and/or 'C' column in the '" + client.open_by_key(MASTER_SPREADSHEET_ID).title + "' Spreadsheet.")
@@ -101,7 +91,7 @@ def searchFrequencyMasterSheet(result_date, result_area):
         print("ERROR: Unable to open the Master Spreadsheet. Please check the Master_Spreadsheet_ID.")
 
 # Updates the cleaning schedule sheet based on the results found in the csv file
-def updateCleaningScheduleSheet(reformatted_date, next_date, result_area):
+def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID):
     try:
         # Modify second Google Sheet
         sheet2 = client.open_by_key(SPREADSHEET_ID).sheet1
@@ -150,6 +140,14 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area):
     except AttributeError as error:
         print("ERROR: Unable to find column with the value: 'Second to Last Cleaning Date'")
 
+    #Returns a dictionary of the important data
+    return {
+        "Area/Descriptor" : result_area[1],
+        "Task" : result_area[0],
+        "Next Cleaning Date" : next_date,
+        "Last Cleaning Date" : reformatted_date,
+    }
+
 #date_values: (int)[day, month, year]
 def calculateNextDate(date_values, freq, amount):
     constructed_date = datetime(date_values[2], date_values[0], date_values[1])     #Year, Month, Day
@@ -165,27 +163,3 @@ def calculateNextDate(date_values, freq, amount):
         return "UNABLE TO CALCULATE. Check 'Frequency' column."
 
     return str(constructed_date).split()[0]
-
-
-
-# Test functions
-if __name__ == '__main__':
-    try:
-        path = os.path.dirname(os.path.realpath(__file__)) + '\\tmp'
-        print(path)
-        readCSVFiles(path)
-
-    except gspread.exceptions.APIError as e:
-        try:
-            time.sleep(4)
-            print("Momentairly unable to access Google Sheets API. Will attempt to access again. \n\tPlease wait a few minutes...")
-            time.sleep(240) #4 minutes
-            print("Second attempt commencing...\n\n")
-            readCSVFiles(path)
-        except gspread.exceptions.APIError as e:
-            print("Still unable to access API. Please check if quota limit has been reached.")
-        except FileNotFoundError as e:
-            print("The file path '" + path + "' doesn't exist within this system.\nMake sure " + os.path.dirname(os.path.realpath(__file__)) + " has a 'tmp' folder within.")
-    except FileNotFoundError as e:
-        print("The file path '" + path + "' doesn't exist within this system.\nMake sure " + os.path.dirname(os.path.realpath(__file__)) + " has a 'tmp' folder within.")
-    
