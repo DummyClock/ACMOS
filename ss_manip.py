@@ -31,6 +31,7 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
             result1 = df.iloc[rows,date_value_col].split()
             result2 = df.iloc[rows,task_value_col].split(" - ")
             important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
+            time.sleep(30) # prevents multiple API calls surpassing the 1 minute quota
     return important_results
 
 # Will search the Frequency Master Sheet for specific values
