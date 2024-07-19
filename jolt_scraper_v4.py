@@ -21,11 +21,11 @@ SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
     #Get the default one-week-period dates
+    print("Searching for files with the name " + str(listNames))
     if startDate == None and endDate == None:
         endDate = str(date.today())
         startDate = str(date.today() - timedelta(days=7))
     print("StartDate:"+startDate+"!")
-    print("Check it:" +SPREADSHEET_ID)
 
     #Prepare download location before launching instance of webdriver in headless mode
     download_dir = os.path.dirname(os.path.realpath(__file__))+ '\\tmp'
@@ -75,10 +75,11 @@ def downloadCSVs(listNames, startDate=None, endDate=None):
 
     time.sleep(1.5)
     driver.close()
+    print("Closed webdriver instance")
 
     return download_dir
 
-#Function used to set the date range in Jolt's completed lists in grid view
+#ISSUE: Correct value is entered, but site does not store it, leaving it to reset
 def dateRange(driver, startDate, endDate):
     driver.find_element(By.CLASS_NAME, "date-range-filter").click() #Open up date range picker
     time.sleep(2)
@@ -87,17 +88,12 @@ def dateRange(driver, startDate, endDate):
     start_field = driver.find_element(By.ID, "input-start")
     start_field.clear()
     start_field.send_keys(startDate)
-    # Trigger focus event on another element to ensure the dates are registered
-    driver.find_element(By.CLASS_NAME, "date-range-picker").click()
-    time.sleep(1)
 
     #Put in the end date
     end_field = driver.find_element(By.ID, "input-end")
     end_field.clear()
     end_field.send_keys(endDate)
-    # Trigger focus event on another element to ensure the dates are registered
-    driver.find_element(By.CLASS_NAME, "date-range-picker").click()
-    time.sleep(1)
+    time.sleep(2)
 
     #Find and click on "Done" in the Date-Range picker menu
     buttons = driver.find_element(By.CLASS_NAME, "date-range-menu").find_element(By.CLASS_NAME, "button-row").find_elements(By.CLASS_NAME, "button")
@@ -108,6 +104,6 @@ def dateRange(driver, startDate, endDate):
     time.sleep(5)
 
 #Testing the functions. (Downloads files & lists names of downloaded files)
-listName = ["BOH Closing Checklist"]
-print("Path: " + str(downloadCSVs(listName)))
+#listName = ["BOH Closing Checklist"]
+#print("Path: " + str(downloadCSVs(listName)))
 # editGoogleSheets("Nugg", "TODAY")
