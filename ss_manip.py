@@ -8,40 +8,29 @@ from dateutil.relativedelta import relativedelta
 
 # Will search the downloaded csv files in path for specific values
 def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE):
+    # Store important results here
     important_results = []
+
+    # Values to search for within the downloaded csv files
+    date_value = 'Date of Cleaning Task'
+    task_value = 'Cleaning Task'
+
     downloadedFiles = os.listdir(path)
     for f in downloadedFiles:
-        #Values to search for in csv files
-        date_value = 'DATE-Date of Cleaning Task'
-        task_value = 'MULTIPLE_CHOICE-Cleaning Task'
-
-        #Construct file path
+        # Convert into dataframe
         file_path = os.path.join(path, f)
+        df = pd.read_csv(file_path).T
+        new_header = df.iloc[0]  
+        df = df[1:]  
+        df.columns = new_header  
 
-        #Check if file is .csv, then create dataframe
-        if not file_path.endswith('.csv'):
-            print("ERROR: Cannot open the file '" + os.path.basename(file_path) + "' missing the '.csv' extension")
-            continue
-        df = pd.read_csv(file_path)
-        print("\nFile being parsed: " + os.path.basename(file_path))
-        
-        #Get the cleaning date from dataframe
-        date_row_index = df.index[df['Item'] == date_value].tolist() 
-        if not date_row_index:
-            print("ERROR: Unable to find the column header '" + date_value + "' in the '" + os.path.basename(file_path) + "' file. Verify that '" + date_value +"' header exists.")
-            continue
-        else:
-            result1 = df.loc[date_row_index, "Result"].to_string(index=False).split()
-
-        #Get the item cleaned fromdataframe
-        task_row_index = df.index[df['Item'] == task_value].to_list()
-        if not task_row_index:
-            print("ERROR: Unable to find the column header '" + task_value + "' in the '" + os.path.basename(file_path) + "' file. Verify that '" + task_value +"' header exists.")
-            continue
-        else:
-            result2 = df.loc[task_row_index, "Result"].to_string(index=False).split(' - ')
-
-        important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
+        # Read each row for specific values
+        date_value_col = df.columns.get_loc(date_value)
+        task_value_col = df.columns.get_loc(task_value)
+        for rows in range(df.shape[0]):
+            result1 = df.iloc[rows,date_value_col].split()
+            result2 = df.iloc[rows,task_value_col].split(" - ")
+            important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
     return important_results
 
 # Will search the Frequency Master Sheet for specific values
