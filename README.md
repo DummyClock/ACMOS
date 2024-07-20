@@ -31,7 +31,7 @@ ACMOS automates the collection of cleaning task completion data from Jolt and se
 - Finish CSV/Spreadsheet modification methods
     - ~~Move CSV/Spreadsheet modification methods into their own package/module/file~~
     - ~~Incorporate Cleaning task frequency master list spreadsheet~~
-    - ~~Finish method for reading the currently downloaded spreadsheets and properly sending them to the date calculation method
+    - ~~Finish method for reading the currently downloaded spreadsheets and properly sending them to the date calculation method~~
     - ~~Create a next-date calculation method, which calculates the next cleaning date and send both the next and current date to Google Spreadsheets~~
     - ~~Method for calculating the next cleaning date returns a dictionary of modified cleaning tasks.~~
     - Gather the tasks coming up within the next month/week, to be sent on Slack as a reminder
