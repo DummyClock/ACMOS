@@ -22,16 +22,19 @@ ACMOS automates the collection of cleaning task completion data from Jolt and se
 ## To-Do List
 
 - Cleanup Repository
-    - Remove excess files, and separate methods/functions into appropriate files/modules/packages
+    - Remove excess files or move them to an archive folder or archive branch
 - Create a main file for running
     - Includes calling methods for downloading data, manipulating data, and sending information to Slack
-- Add logging
+- ~~Add logging~~ No need for it at this moment
 - Update Frequency columns in Master
     - From Frequency in both days and words, use a column for the amount of a frequency and then a column for the frequency(CSV EX: "Primary","Fry Fridge","2","Month"; This'll be every 2 months) 
 - Finish CSV/Spreadsheet modification methods
     - ~~Move CSV/Spreadsheet modification methods into their own package/module/file~~
     - ~~Incorporate Cleaning task frequency master list spreadsheet~~
-    - Finish method for reading the currently downloaded spreadsheets and properly sending them to the date calculation method
-    - Create a next-date calculation method, which calculates the next cleaning date and send both the next and current date to Google Spreadsheets
-    - Store the completed task, date, next date, and who completed it locally to be sent to Slack.
+    - ~~Finish method for reading the currently downloaded spreadsheets and properly sending them to the date calculation method
+    - ~~Create a next-date calculation method, which calculates the next cleaning date and send both the next and current date to Google Spreadsheets~~
+    - ~~Method for calculating the next cleaning date returns a dictionary of modified cleaning tasks.~~
     - Gather the tasks coming up within the next month/week, to be sent on Slack as a reminder
+    - Spreadsheet named "active-tasks", for storing DUE, OVERDUE, and UPCOMING tasks to be use for Slack
+        - Spreadsheet gets updated weekly, Due turns to overdue then removed later using the returned dictionary. UPCOMING turn to DUE, as it's now the week its due.
+        - Check if we can both update the active task status as we removed cleaned tasks; Divide & Conquer or All at Once
