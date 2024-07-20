@@ -75,7 +75,7 @@ def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID,
 
                 # Calculate the next cleaning date
                 if date_values == "":
-                    date_values = datetime.today().strftime("%Y-%m-%d")
+                    date_values = datetime.today().strftime("%m/%d/%y")
                 else:
                     date_values = result_date[0].split('/')
                 reformatted_date = date_values[0] + '-' + date_values[1] + '-' + date_values[2]
