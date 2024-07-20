@@ -30,47 +30,67 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
         for rows in range(df.shape[0]):
             result1 = df.iloc[rows,date_value_col].split()
             result2 = df.iloc[rows,task_value_col].split(" - ")
+            #print(result1)
+            #print(result2)
             important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
-            time.sleep(30) # prevents multiple API calls surpassing the 1 minute quota
     return important_results
 
 # Will search the Frequency Master Sheet for specific values
 def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID):
     try:
-        # Connect to Sheets API & Google Spreadsheet
-        sheet = client.open_by_key(MASTER_SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
+        #Fail Safe for API Failure
+        api_error = True
+        api_error_counter = 0
 
-        # Find the row with the values in the results list
-        task_index = sheet.find("Task").col                          #Task
-        area_index = sheet.find("Area/Descriptor").col               #Area/Descriptor
-        
-        found = False
-        row_index = 0
-        for row_index, row in enumerate(sheet.get_all_values()):
-            if row[task_index-1] == result_area[0] and row[area_index-1] == result_area[1]:
-                found = True
-                row_index = row_index + 1
-                print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index) + " of Master Spreadsheet")
-                break
+        #While loop checks for api failure
+        while(api_error and api_error_counter <=3):
+            try:
+                api_error = False
+                # Connect to Sheets API & Google Spreadsheet
+                sheet = client.open_by_key(MASTER_SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
 
-        # If the row couldn't be found, abort
-        if(not found):
-            print("ERROR: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title)
-            return
-        
-        # Get the frequency
-        frequency_col_index = sheet.find("Frequency").col       #Frequency
-        amount_col_index = sheet.find("Amount").col             #Amount
-        freq = sheet.cell(row_index, frequency_col_index).value
-        amount = int(sheet.cell(row_index, amount_col_index).value)
+                # Find the row with the values in the results list
+                task_index = sheet.find("Task").col                          #Task
+                area_index = sheet.find("Area/Descriptor").col               #Area/Descriptor
+                
+                found = False
+                row_index = 0
+                for row_index, row in enumerate(sheet.get_all_values()):
+                    if row[task_index-1] == result_area[0] and row[area_index-1] == result_area[1]:
+                        found = True
+                        row_index = row_index + 1
+                        print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index) + " of Master Spreadsheet")
+                        break
 
-        # Calculate the next cleaning date
-        date_values = result_date[0].split('/')
-        reformatted_date = date_values[0] + '-' + date_values[1] + '-' + date_values[2]
-        next_date = calculateNextDate([int(date_values[0]), int(date_values[1]), int(date_values[2])], freq, amount)
+                # If the row couldn't be found, abort
+                if(not found):
+                    print("ERROR: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title)
+                    return
+                
+                # Get the frequency
+                frequency_col_index = sheet.find("Frequency").col       #Frequency
+                amount_col_index = sheet.find("Amount").col             #Amount
+                freq = sheet.cell(row_index, frequency_col_index).value
+                amount = int(sheet.cell(row_index, amount_col_index).value)
+
+                # Calculate the next cleaning date
+                date_values = result_date[0].split('/')
+                reformatted_date = date_values[0] + '-' + date_values[1] + '-' + date_values[2]
+                next_date = calculateNextDate([int(date_values[0]), int(date_values[1]), int(date_values[2])], freq, amount)
+
+            except gspread.exceptions.APIError as e:
+                # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
+                print("Momentairly unable to access Google Sheets API. Will attempt to access again. \n\tPlease wait a few minutes...")
+                time.sleep(180)
+                api_error = True
+                api_error_counter =+ 1
+
+        # Check if max attempts have been made
+        if api_error_counter >= 3:
+            print("Maxiumum Attempts (3) have been made! Please try again some other time.")
+            return []
 
         return updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID)
-
     except AttributeError as e:
         print("ERROR: Unable to find the 'Task' column and/or 'Area/Descriptor' column and/or 'C' column in the '" + client.open_by_key(MASTER_SPREADSHEET_ID).title + "' Spreadsheet.")
     except TypeError as e:
@@ -83,27 +103,46 @@ def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID,
 # Updates the cleaning schedule sheet based on the results found in the csv file
 def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID):
     try:
-        # Modify second Google Sheet
-        sheet2 = client.open_by_key(SPREADSHEET_ID).sheet1
+        #Fail Safe for API Failure
+        api_error = True
+        api_error_counter = 0
 
-        # Find the row with the values in the results list
-        task_index = sheet2.find("Task").col                          #Task
-        area_index = sheet2.find("Area/Descriptor").col               #Area/Descriptor
+        #While loop checks for api failure
+        while(api_error and api_error_counter <=3):
+            try:
+                api_error = False
+                # Modify second Google Sheet
+                sheet2 = client.open_by_key(SPREADSHEET_ID).sheet1
 
-        #When using get_all_values() the indexing starts at 0, so we have to account for it
-        found = False
-        row_index = 0
-        for row_index, row in enumerate(sheet2.get_all_values()):
-            if row[task_index-1] == result_area[0] and row[area_index-1] == result_area[1]:
-                found = True
-                row_index = row_index + 1
-                print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index+1) + " of Cleaning Spreadsheet")
-                break
+                # Find the row with the values in the results list
+                task_index = sheet2.find("Task").col                          #Task
+                area_index = sheet2.find("Area/Descriptor").col               #Area/Descriptor
 
-        if(not found):
-            print("ERROR: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(SPREADSHEET_ID).title)
-            return
+                #When using get_all_values() the indexing starts at 0, so we have to account for it
+                found = False
+                row_index = 0
+                for row_index, row in enumerate(sheet2.get_all_values()):
+                    if row[task_index-1] == result_area[0] and row[area_index-1] == result_area[1]:
+                        found = True
+                        row_index = row_index + 1
+                        print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index+1) + " of Cleaning Spreadsheet")
+                        break
 
+                if(not found):
+                    print("ERROR: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(SPREADSHEET_ID).title)
+                    return
+            except gspread.exceptions.APIError as e:
+                # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
+                print("Momentairly unable to access Google Sheets API. Will attempt to access again. \n\tPlease wait a few minutes...")
+                time.sleep(180)
+                api_error = True
+                api_error_counter =+ 1
+
+        # Check if max attempts have been made
+        if api_error_counter >= 3:
+            print("Maxiumum Attempts (3) have been made! Please try again some other time.")
+            return []
+        
     except AttributeError as e:
         print("ERROR: Unable to find the 'Task' column and/or 'Area/Descriptor' column and/or 'C' column in the '" + client.open_by_key(SPREADSHEET_ID).title + "' Spreadsheet.")
     except NameError as e:
