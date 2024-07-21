@@ -5,6 +5,7 @@ import time
 from google.oauth2.service_account import Credentials
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from gspread.exceptions import APIError
 
 # Will search the downloaded csv files in path for specific values
 def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE):
@@ -24,15 +25,22 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
         df = df[1:]  
         df.columns = new_header  
 
+        # Counter to prevent api quota
+        limit = 0
+
         # Read each row for specific values
         date_value_col = df.columns.get_loc(date_value)
         task_value_col = df.columns.get_loc(task_value)
         for rows in range(df.shape[0]):
             result1 = df.iloc[rows,date_value_col].split()
             result2 = df.iloc[rows,task_value_col].split(" - ")
-            #print(result1)
-            #print(result2)
             important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
+            time.sleep(15)
+            """limit += 1
+            if limit == 5:
+                print("Taking a break from accessing API. Please wait a few second.")
+                time.sleep(60) # Prevents API Quota being exceeded
+                limit = 0"""
     return important_results
 
 # Will search the Frequency Master Sheet for specific values
@@ -40,13 +48,13 @@ def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID,
     try:
         #Fail Safe for API Failure
         api_error = True
-        api_error_counter = 0
+        api_error_counter = 3
 
         #While loop checks for api failure
-        while(api_error and api_error_counter <=3):
+        while api_error and api_error_counter > 0:
             try:
-                api_error = False
                 # Connect to Sheets API & Google Spreadsheet
+                api_error = False   # Prevent unneccessary looping when an error doesn't occur
                 sheet = client.open_by_key(MASTER_SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
 
                 # Find the row with the values in the results list
@@ -64,7 +72,7 @@ def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID,
 
                 # If the row couldn't be found, abort
                 if(not found):
-                    print("ERROR: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title)
+                    print("ERROR 101: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title)
                     return
                 
                 # Get the frequency
@@ -74,47 +82,41 @@ def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID,
                 amount = int(sheet.cell(row_index, amount_col_index).value)
 
                 # Calculate the next cleaning date
-                if date_values == "":
-                    date_values = datetime.today().strftime("%m/%d/%y").split('/')
-                else:
-                    date_values = result_date[0].split('/')
+                date_values = result_date[0].split('/')
                 reformatted_date = date_values[0] + '-' + date_values[1] + '-' + date_values[2]
                 next_date = calculateNextDate([int(date_values[0]), int(date_values[1]), int(date_values[2])], freq, amount)
-
-            except gspread.exceptions.APIError as e:
-                # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
-                print("Momentairly unable to access Google Sheets API. Will attempt to access again. \n\tPlease wait a few minutes...")
-                time.sleep(180)
-                api_error = True
-                api_error_counter =+ 1
-
-        # Check if max attempts have been made
-        if api_error_counter >= 3:
-            print("Maxiumum Attempts (3) have been made! Please try again some other time.")
-            return []
-
+            except APIError as e:
+                    # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
+                    api_error = True
+                    api_error_counter -=  1  
+                    if api_error_counter > 0: 
+                            print("Minute Quota for Google Sheets API reached (CLEANING_SPREADSHEET). Will attempt to access again. \n\tPlease wait a moment...\n\tAttempts Left: " + str(api_error_counter))
+                            time.sleep(66)
+                    else:
+                        print("Unable to Google Sheets API right now. Skipping this process.")
         return updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID)
+
     except AttributeError as e:
-        print("ERROR: Unable to find the 'Task' column and/or 'Area/Descriptor' column and/or 'C' column in the '" + client.open_by_key(MASTER_SPREADSHEET_ID).title + "' Spreadsheet.")
+        print("ERROR 102: Unable to find the 'Task' column,'Area/Descriptor' column, 'Frequency' column, and/or 'Amount' column in the '" + client.open_by_key(MASTER_SPREADSHEET_ID).title + "' Spreadsheet.")
     except TypeError as e:
-        print("ERROR: Unable to calculate the next cleaning date. Be sure to follow the date syntax 'MM-DD-YYYY'.\n Make sure a proper date is stored in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title + "'Frequency' & 'Amount' columns.")
+        print("ERROR 103: Unable to calculate the next cleaning date. Be sure to follow the date syntax 'MM-DD-YYYY'.\n Make sure a proper date is stored in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title + "'Frequency' & 'Amount' columns.")
     except ValueError as e:
-        print("ERROR: Unable to parse the date collected from the downloaded file.")
+        print("ERROR 104: Unable to parse the date collected from the downloaded file.")
     except NameError as e:
-        print("ERROR: Unable to open the Master Spreadsheet. Please check the Master_Spreadsheet_ID.")
+        print("ERROR 105: Unable to open the Master Spreadsheet. Please check the Master_Spreadsheet_ID.")
 
 # Updates the cleaning schedule sheet based on the results found in the csv file
 def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID):
     try:
         #Fail Safe for API Failure
         api_error = True
-        api_error_counter = 0
+        api_error_counter = 3
 
         #While loop checks for api failure
-        while(api_error and api_error_counter <=3):
+        while api_error and api_error_counter > 0:
             try:
-                api_error = False
                 # Modify second Google Sheet
+                api_error = False
                 sheet2 = client.open_by_key(SPREADSHEET_ID).sheet1
 
                 # Find the row with the values in the results list
@@ -132,24 +134,22 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
                         break
 
                 if(not found):
-                    print("ERROR: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(SPREADSHEET_ID).title)
+                    print("ERROR 106: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(SPREADSHEET_ID).title)
                     return
-            except gspread.exceptions.APIError as e:
-                # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
-                print("Momentairly unable to access Google Sheets API. Will attempt to access again. \n\tPlease wait a few minutes...")
-                time.sleep(180)
-                api_error = True
-                api_error_counter =+ 1
+            except APIError as e:
+                        # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
+                        api_error = True
+                        api_error_counter -= 1 
+                        if api_error_counter > 0: 
+                            print("Minute Quota for Google Sheets API reached (CLEANING_SPREADSHEET). Will attempt to access again. \n\tPlease wait a moment...\n\tAttempts Left: " + str(api_error_counter))
+                            time.sleep(66)  
+                        else:
+                            print("Unable to Google Sheets API right now. Skipping this process.")
 
-        # Check if max attempts have been made
-        if api_error_counter >= 3:
-            print("Maxiumum Attempts (3) have been made! Please try again some other time.")
-            return []
-        
     except AttributeError as e:
-        print("ERROR: Unable to find the 'Task' column and/or 'Area/Descriptor' column and/or 'C' column in the '" + client.open_by_key(SPREADSHEET_ID).title + "' Spreadsheet.")
+        print("ERROR 102: Unable to find the 'Task' column,'Area/Descriptor' column, 'Frequency' column, and/or 'Amount' column in the '" + client.open_by_key(SPREADSHEET_ID).title + "' Spreadsheet.")
     except NameError as e:
-        print("ERROR: Unable to open the Cleaning Schedule Spreadsheet. Please check the Spreadsheet_ID.")
+        print("ERROR 108: Unable to open the Cleaning Schedule Spreadsheet. Please check the Spreadsheet_ID.")
 
     # Update the "Last Cleaning Date" column with the new date
     try:
@@ -157,20 +157,20 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
         previous_last_date = sheet2.cell(row_index,last_cleaning_col).value
         sheet2.update_cell(row_index,last_cleaning_col, reformatted_date)
     except AttributeError as error:
-        print("ERROR: Unable to find column with the value: 'Last Cleaning Date'")
+        print("ERROR 109: Unable to find column with the value: 'Last Cleaning Date'")
 
     # Update "Next Cleaning Date" column with the new date
     try:
         next_cleaning_col = sheet2.find("Next Cleaning Date").col
         sheet2.update_cell(row_index,next_cleaning_col, next_date)
     except AttributeError as error:
-        print("ERROR: Unable to find column with the value: 'Next Cleaning Date'")
+        print("ERROR 110: Unable to find column with the value: 'Next Cleaning Date'")
 
     try:
         next_cleaning_col = sheet2.find("Second to Last Cleaning Date").col
         sheet2.update_cell(row_index,next_cleaning_col, previous_last_date)
     except AttributeError as error:
-        print("ERROR: Unable to find column with the value: 'Second to Last Cleaning Date'")
+        print("ERROR 111: Unable to find column with the value: 'Second to Last Cleaning Date'")
 
     #Returns a dictionary of the important data
     return {
