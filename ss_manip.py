@@ -25,9 +25,6 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
         df = df[1:]  
         df.columns = new_header  
 
-        # Counter to prevent api quota
-        limit = 0
-
         # Read each row for specific values
         date_value_col = df.columns.get_loc(date_value)
         task_value_col = df.columns.get_loc(task_value)
@@ -36,11 +33,6 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
             result2 = df.iloc[rows,task_value_col].split(" - ")
             important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
             time.sleep(15)
-            """limit += 1
-            if limit == 5:
-                print("Taking a break from accessing API. Please wait a few second.")
-                time.sleep(60) # Prevents API Quota being exceeded
-                limit = 0"""
     return important_results
 
 # Will search the Frequency Master Sheet for specific values
