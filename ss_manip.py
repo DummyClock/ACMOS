@@ -201,6 +201,7 @@ def apiTimeOut(api_error_counter):
         print("Unable to Google Sheets API right now. Skipping this process.")
     return True
 
+'''
 from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
@@ -208,3 +209,4 @@ client = gspread.authorize(creds)
 path = os.path.dirname(os.path.realpath(__file__)) + '\\tmp'
 
 readCSVFiles(path, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID)
+'''
