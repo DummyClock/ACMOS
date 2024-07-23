@@ -6,8 +6,9 @@ from google.oauth2.service_account import Credentials
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from gspread.exceptions import APIError
+from gspread import cell
 
-MAX_API_REQUEST = 10
+MAX_API_REQUEST = 15
 
 # Will search the downloaded csv files in path for specific values
 def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE):
@@ -150,21 +151,8 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
         print("ERROR 108: Unable to open the Cleaning Schedule Spreadsheet. Please check the Spreadsheet_ID.")
 
     # Update the "Last Cleaning Date" column with the new date
-    try:
-        sheet2.update_cell(row_index,last_cleaning_col, reformatted_date)
-    except AttributeError as error:
-        print("ERROR 109: Unable to find column with the value: 'Last Cleaning Date'")
-
-    # Update "Next Cleaning Date" column with the new date
-    try:
-        sheet2.update_cell(row_index,next_cleaning_col, next_date)
-    except AttributeError as error:
-        print("ERROR 110: Unable to find column with the value: 'Next Cleaning Date'")
-
-    try:
-        sheet2.update_cell(row_index,stl_cleaning_col, previous_last_date)
-    except AttributeError as error:
-        print("ERROR 111: Unable to find column with the value: 'Second to Last Cleaning Date'")
+    batch = formatBatch(row_index, [last_cleaning_col, next_cleaning_col, stl_cleaning_col], [reformatted_date, next_date, previous_last_date])
+    sheet2.batch_update(batch, value_input_option="RAW")
 
     #Returns a dictionary of the important data
     return {
@@ -200,6 +188,12 @@ def apiTimeOut(api_error_counter):
     else:
         print("Unable to Google Sheets API right now. Skipping this process.")
     return True
+
+def formatBatch(row, columns, values):
+    a1_notation = {}
+    for i in range(len(columns)):
+        a1_notation[cell.Cell(row, columns[i]).address] = values[i]
+    return [{'range': c, 'values':[[value]]} for c, value in a1_notation.items()]
 
 '''
 from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
