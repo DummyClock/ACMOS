@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from gspread.exceptions import APIError
 
-MAX_API_REQUEST = 15
+MAX_API_REQUEST = 10
 
 # Will search the downloaded csv files in path for specific values
 def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE):
