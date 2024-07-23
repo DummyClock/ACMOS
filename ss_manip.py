@@ -7,6 +7,8 @@ from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from gspread.exceptions import APIError
 
+MAX_API_REQUEST = 15
+
 # Will search the downloaded csv files in path for specific values
 def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE):
     # Store important results here
@@ -28,11 +30,16 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
         # Read each row for specific values
         date_value_col = df.columns.get_loc(date_value)
         task_value_col = df.columns.get_loc(task_value)
+        api_request = 0
         for rows in range(df.shape[0]):
             result1 = df.iloc[rows,date_value_col].split()
             result2 = df.iloc[rows,task_value_col].split(" - ")
             important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
-            time.sleep(15)
+            api_request += 1
+            if api_request > MAX_API_REQUEST:
+                print("Too many API request made. Taking a quick minute break...")
+                api_request = 0
+                time.sleep(60)
     return important_results
 
 # Will search the Frequency Master Sheet for specific values
@@ -49,17 +56,20 @@ def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID,
                 api_error = False   # Prevent unneccessary looping when an error doesn't occur
                 sheet = client.open_by_key(MASTER_SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
 
-                # Find the row with the values in the results list
-                task_index = sheet.find("Task").col                          #Task
-                area_index = sheet.find("Area/Descriptor").col               #Area/Descriptor
+                # Find neccessary column indexs (index values start at 0, when using for gspread functions remember to increment the index)
+                all_master_values = sheet.get_all_values()
+                area_col = all_master_values[0].index("Area/Descriptor")
+                task_col =  all_master_values[0].index("Task")
+                freq_col = all_master_values[0].index("Frequency")
+                amount_col = all_master_values[0].index("Amount")
                 
+                # Search for the row containing desired "Area" & "Task" values
                 found = False
                 row_index = 0
-                for row_index, row in enumerate(sheet.get_all_values()):
-                    if row[task_index-1] == result_area[0] and row[area_index-1] == result_area[1]:
+                for row_index, row in enumerate(all_master_values):
+                    if row[task_col] == result_area[0] and row[area_col] == result_area[1]:
                         found = True
-                        row_index = row_index + 1
-                        print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index) + " of Master Spreadsheet")
+                        print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index+1) + " of Master Spreadsheet")
                         break
 
                 # If the row couldn't be found, abort
@@ -67,25 +77,17 @@ def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID,
                     print("ERROR 101: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title)
                     return
                 
-                # Get the frequency
-                frequency_col_index = sheet.find("Frequency").col       #Frequency
-                amount_col_index = sheet.find("Amount").col             #Amount
-                freq = sheet.cell(row_index, frequency_col_index).value
-                amount = int(sheet.cell(row_index, amount_col_index).value)
-
                 # Calculate the next cleaning date
+                freq = all_master_values[row_index][freq_col]
+                amount = all_master_values[row_index][amount_col]
+            
                 date_values = result_date[0].split('/')
                 reformatted_date = date_values[0] + '-' + date_values[1] + '-' + date_values[2]
-                next_date = calculateNextDate([int(date_values[0]), int(date_values[1]), int(date_values[2])], freq, amount)
+
+                next_date = calculateNextDate([int(date_values[0]), int(date_values[1]), int(date_values[2])], freq, int(amount))
             except APIError as e:
-                    # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
-                    api_error = True
-                    api_error_counter -=  1  
-                    if api_error_counter > 0: 
-                            print("Minute Quota for Google Sheets API reached (CLEANING_SPREADSHEET). Will attempt to access again. \n\tPlease wait a moment...\n\tAttempts Left: " + str(api_error_counter))
-                            time.sleep(66)
-                    else:
-                        print("Unable to Google Sheets API right now. Skipping this process.")
+                # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
+                api_error = apiTimeOut(api_error_counter)
         return updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID)
 
     except AttributeError as e:
@@ -111,56 +113,56 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
                 api_error = False
                 sheet2 = client.open_by_key(SPREADSHEET_ID).sheet1
 
-                # Find the row with the values in the results list
-                task_index = sheet2.find("Task").col                          #Task
-                area_index = sheet2.find("Area/Descriptor").col               #Area/Descriptor
-
+                # Find all necessary column indicies
+                all_schedule_values = sheet2.get_all_values()
+                area_col = all_schedule_values[0].index("Area/Descriptor")
+                task_col =  all_schedule_values[0].index("Task")
+                last_cleaning_col = all_schedule_values[0].index("Last Cleaning Date") 
+                next_cleaning_col = all_schedule_values[0].index("Next Cleaning Date")
+                stl_cleaning_col = all_schedule_values[0].index("Second to Last Cleaning Date")
+               
                 #When using get_all_values() the indexing starts at 0, so we have to account for it
                 found = False
                 row_index = 0
-                for row_index, row in enumerate(sheet2.get_all_values()):
-                    if row[task_index-1] == result_area[0] and row[area_index-1] == result_area[1]:
+                for row_index, row in enumerate(all_schedule_values):
+                    if row[task_col] == result_area[0] and row[area_col] == result_area[1]:
                         found = True
-                        row_index = row_index + 1
                         print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index+1) + " of Cleaning Spreadsheet")
                         break
 
+                #Save the 'outdated' last cleaning date; will use later
+                previous_last_date = all_schedule_values[row_index][next_cleaning_col]
+
+                # Update for gspread usage
+                row_index += 1 
+                last_cleaning_col += 1
+                next_cleaning_col += 1
+                stl_cleaning_col += 1
+
+                # If the row couldn't be found, abort
                 if(not found):
-                    print("ERROR 106: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(SPREADSHEET_ID).title)
+                    print("ERROR 101: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(SPREADSHEET_ID).title)
                     return
             except APIError as e:
-                        # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
-                        api_error = True
-                        api_error_counter -= 1 
-                        if api_error_counter > 0: 
-                            print("Minute Quota for Google Sheets API reached (CLEANING_SPREADSHEET). Will attempt to access again. \n\tPlease wait a moment...\n\tAttempts Left: " + str(api_error_counter))
-                            time.sleep(66)  
-                        else:
-                            print("Unable to Google Sheets API right now. Skipping this process.")
-
-    except AttributeError as e:
-        print("ERROR 102: Unable to find the 'Task' column,'Area/Descriptor' column, 'Frequency' column, and/or 'Amount' column in the '" + client.open_by_key(SPREADSHEET_ID).title + "' Spreadsheet.")
+                # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
+                api_error = apiTimeOut(api_error_counter)
     except NameError as e:
         print("ERROR 108: Unable to open the Cleaning Schedule Spreadsheet. Please check the Spreadsheet_ID.")
 
     # Update the "Last Cleaning Date" column with the new date
     try:
-        last_cleaning_col = sheet2.find("Last Cleaning Date").col
-        previous_last_date = sheet2.cell(row_index,last_cleaning_col).value
         sheet2.update_cell(row_index,last_cleaning_col, reformatted_date)
     except AttributeError as error:
         print("ERROR 109: Unable to find column with the value: 'Last Cleaning Date'")
 
     # Update "Next Cleaning Date" column with the new date
     try:
-        next_cleaning_col = sheet2.find("Next Cleaning Date").col
         sheet2.update_cell(row_index,next_cleaning_col, next_date)
     except AttributeError as error:
         print("ERROR 110: Unable to find column with the value: 'Next Cleaning Date'")
 
     try:
-        next_cleaning_col = sheet2.find("Second to Last Cleaning Date").col
-        sheet2.update_cell(row_index,next_cleaning_col, previous_last_date)
+        sheet2.update_cell(row_index,stl_cleaning_col, previous_last_date)
     except AttributeError as error:
         print("ERROR 111: Unable to find column with the value: 'Second to Last Cleaning Date'")
 
@@ -185,5 +187,24 @@ def calculateNextDate(date_values, freq, amount):
     else:
         print("'" + freq + "' is an unsuported frequency type. Please use 'Week', 'Month', or 'Quarter' within the 'Frequency' column of the Master Spreadsheet.")
         return "UNABLE TO CALCULATE. Check 'Frequency' column."
+    date_values = str(constructed_date).split()[0].split("-")
 
-    return str(constructed_date).split()[0]
+    return date_values[1] + "-" + date_values[2] + "-" + date_values[0]
+
+def apiTimeOut(api_error_counter):
+    # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
+    api_error_counter -= 1 
+    if api_error_counter > 0: 
+        print("Minute Quota for Google Sheets API reached (CLEANING_SPREADSHEET). Will attempt to access again. \n\tPlease wait a moment...\n\tAttempts Left: " + str(api_error_counter))
+        time.sleep(66)  
+    else:
+        print("Unable to Google Sheets API right now. Skipping this process.")
+    return True
+
+from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
+client = gspread.authorize(creds)
+path = os.path.dirname(os.path.realpath(__file__)) + '\\tmp'
+
+readCSVFiles(path, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID)
