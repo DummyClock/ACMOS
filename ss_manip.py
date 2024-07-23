@@ -114,6 +114,14 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
                 api_error = False
                 sheet2 = client.open_by_key(SPREADSHEET_ID).sheet1
 
+                #Return Value
+                returnDict = {
+                    "Area/Descriptor" : result_area[1],
+                    "Task" : result_area[0],
+                    "Next Cleaning Date" : next_date,
+                    "Last Cleaning Date" : reformatted_date,
+                }
+
                 # Find all necessary column indicies
                 all_schedule_values = sheet2.get_all_values()
                 area_col = all_schedule_values[0].index("Area/Descriptor")
@@ -123,6 +131,7 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
                 stl_cleaning_col = all_schedule_values[0].index("Second to Last Cleaning Date")
                
                 #When using get_all_values() the indexing starts at 0, so we have to account for it
+                batch = []
                 found = False
                 row_index = 0
                 for row_index, row in enumerate(all_schedule_values):
@@ -131,19 +140,22 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
                         print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index+1) + " of Cleaning Spreadsheet")
                         break
 
-                #Save the 'outdated' last cleaning date; will use later
-                previous_last_date = all_schedule_values[row_index][next_cleaning_col]
-
                 # Update for gspread usage
                 row_index += 1 
                 last_cleaning_col += 1
                 next_cleaning_col += 1
                 stl_cleaning_col += 1
+                
+                # If unable to find, add it to the list (because it's data was found in the Master Spreadsheet)
+                if not found:
+                    row_index += 1  #Will be the first empty row
+                    #batch.append({'range': cell.Cell(row_index, area_col).address, 'values': result_area[1]},{'range': cell.Cell(row_index, task_col).address, 'values': result_area[0]})
+                    sheet2.append_row([result_area[1], result_area[0], next_date, reformatted_date])
+                    return returnDict
 
-                # If the row couldn't be found, abort
-                if(not found):
-                    print("ERROR 101: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(SPREADSHEET_ID).title)
-                    return
+                #Save the 'outdated' last cleaning date; will use later
+                previous_last_date = all_schedule_values[row_index][next_cleaning_col]
+
             except APIError as e:
                 # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
                 api_error = apiTimeOut(api_error_counter)
@@ -155,12 +167,7 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
     sheet2.batch_update(batch, value_input_option="RAW")
 
     #Returns a dictionary of the important data
-    return {
-        "Area/Descriptor" : result_area[1],
-        "Task" : result_area[0],
-        "Next Cleaning Date" : next_date,
-        "Last Cleaning Date" : reformatted_date,
-    }
+    return returnDict
 
 #date_values: (int)[day, month, year]
 def calculateNextDate(date_values, freq, amount):
@@ -194,7 +201,6 @@ def formatBatch(row, columns, values):
     for i in range(len(columns)):
         a1_notation[cell.Cell(row, columns[i]).address] = values[i]
     return [{'range': c, 'values':[[value]]} for c, value in a1_notation.items()]
-
 '''
 from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
