@@ -8,19 +8,12 @@ import gspread
 import os
 import time
 
-
-
-from auth import EMAIL, PASSWORD, SPREADSHEET_ID, SERVICE_KEY_JSON_FILE
+#from auth import EMAIL, PASSWORD, SPREADSHEET_ID, SERVICE_KEY_JSON_FILE
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # Gets hidden values from Github Secrets - (Remove this block when testing on a locally)
-'''
 EMAIL = os.environ['EMAIL']
 PASSWORD = os.environ['PASSWORD']
-SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
-MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
-SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
-'''
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
     #Get the default one-week-period dates
