@@ -1,198 +1,116 @@
-import pandas as pd
+from selenium import webdriver 
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from datetime import date, timedelta
+from google.oauth2.service_account import Credentials
 import gspread
 import os
 import time
-from google.oauth2.service_account import Credentials
-from datetime import date, datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from gspread.exceptions import APIError
 
-# Will search the downloaded csv files in path for specific values
-def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE):
-    # Store important results here
-    important_results = []
 
-    # Values to search for within the downloaded csv files
-    date_value = 'Date of Cleaning Task'
-    task_value = 'Cleaning Task'
 
-    downloadedFiles = os.listdir(path)
-    for f in downloadedFiles:
-        # Convert into dataframe
-        file_path = os.path.join(path, f)
-        df = pd.read_csv(file_path).T
-        new_header = df.iloc[0]  
-        df = df[1:]  
-        df.columns = new_header  
+from auth import EMAIL, PASSWORD, SPREADSHEET_ID, SERVICE_KEY_JSON_FILE
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-        # Read each row for specific values
-        date_value_col = df.columns.get_loc(date_value)
-        task_value_col = df.columns.get_loc(task_value)
-        for rows in range(df.shape[0]):
-            result1 = df.iloc[rows,date_value_col].split()
-            result2 = df.iloc[rows,task_value_col].split(" - ")
-            important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
-            time.sleep(15)
-    return important_results
+# Gets hidden values from Github Secrets - (Remove this block when testing on a locally)
+'''
+EMAIL = os.environ['EMAIL']
+PASSWORD = os.environ['PASSWORD']
+SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
+SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
+'''
 
-# Will search the Frequency Master Sheet for specific values
-def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID):
-    try:
-        #Fail Safe for API Failure
-        api_error = True
-        api_error_counter = 3
+def downloadCSVs(listNames, startDate=None, endDate=None):
+    #Get the default one-week-period dates
+    print("Searching for files with the name " + str(listNames))
+    if startDate == None and endDate == None:
+        endDate = str(date.today())
+        startDate = str(date.today() - timedelta(days=7))
+    print("StartDate:"+startDate+"!")
 
-        #While loop checks for api failure
-        while api_error and api_error_counter > 0:
-            try:
-                # Connect to Sheets API & Google Spreadsheet
-                api_error = False   # Prevent unneccessary looping when an error doesn't occur
-                sheet = client.open_by_key(MASTER_SPREADSHEET_ID).sheet1  #'sheet1' refers to the name of the actual sheet
+    #Prepare download location before launching instance of webdriver in headless mode
+    download_dir = os.path.dirname(os.path.realpath(__file__))+ '\\tmp'
+    
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
+        print("Created a temporary directory to store downloads\n\tPath: '" + download_dir +"'")
 
-                # Find the row with the values in the results list
-                task_index = sheet.find("Task").col                          #Task
-                area_index = sheet.find("Area/Descriptor").col               #Area/Descriptor
-                
-                found = False
-                row_index = 0
-                for row_index, row in enumerate(sheet.get_all_values()):
-                    if row[task_index-1] == result_area[0] and row[area_index-1] == result_area[1]:
-                        found = True
-                        row_index = row_index + 1
-                        print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index) + " of Master Spreadsheet")
-                        break
-
-                # If the row couldn't be found, abort
-                if(not found):
-                    print("ERROR 101: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title)
-                    return
-                
-                # Get the frequency
-                frequency_col_index = sheet.find("Frequency").col       #Frequency
-                amount_col_index = sheet.find("Amount").col             #Amount
-                freq = sheet.cell(row_index, frequency_col_index).value
-                amount = int(sheet.cell(row_index, amount_col_index).value)
-
-                # Calculate the next cleaning date
-                date_values = result_date[0].split('/')
-                reformatted_date = date_values[0] + '-' + date_values[1] + '-' + date_values[2]
-                next_date = calculateNextDate([int(date_values[0]), int(date_values[1]), int(date_values[2])], freq, amount)
-            except APIError as e:
-                    # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
-                    api_error = True
-                    api_error_counter -=  1  
-                    if api_error_counter > 0: 
-                            print("Minute Quota for Google Sheets API reached (CLEANING_SPREADSHEET). Will attempt to access again. \n\tPlease wait a moment...\n\tAttempts Left: " + str(api_error_counter))
-                            time.sleep(66)
-                    else:
-                        print("Unable to Google Sheets API right now. Skipping this process.")
-        return updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID)
-
-    except AttributeError as e:
-        print("ERROR 102: Unable to find the 'Task' column,'Area/Descriptor' column, 'Frequency' column, and/or 'Amount' column in the '" + client.open_by_key(MASTER_SPREADSHEET_ID).title + "' Spreadsheet.")
-    except TypeError as e:
-        print("ERROR 103: Unable to calculate the next cleaning date. Be sure to follow the date syntax 'MM-DD-YYYY'.\n Make sure a proper date is stored in the " + client.open_by_key(MASTER_SPREADSHEET_ID).title + "'Frequency' & 'Amount' columns.")
-    except ValueError as e:
-        print("ERROR 104: Unable to parse the date collected from the downloaded file.")
-    except NameError as e:
-        print("ERROR 105: Unable to open the Master Spreadsheet. Please check the Master_Spreadsheet_ID.")
-
-# Updates the cleaning schedule sheet based on the results found in the csv file
-def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client, SPREADSHEET_ID):
-    try:
-        #Fail Safe for API Failure
-        api_error = True
-        api_error_counter = 3
-
-        #While loop checks for api failure
-        while api_error and api_error_counter > 0:
-            try:
-                # Modify second Google Sheet
-                api_error = False
-                sheet2 = client.open_by_key(SPREADSHEET_ID).sheet1
-
-                # Find the row with the values in the results list
-                task_index = sheet2.find("Task").col                          #Task
-                area_index = sheet2.find("Area/Descriptor").col               #Area/Descriptor
-
-                #When using get_all_values() the indexing starts at 0, so we have to account for it
-                found = False
-                row_index = 0
-                for row_index, row in enumerate(sheet2.get_all_values()):
-                    if row[task_index-1] == result_area[0] and row[area_index-1] == result_area[1]:
-                        found = True
-                        row_index = row_index + 1
-                        print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index+1) + " of Cleaning Spreadsheet")
-                        break
-
-                if(not found):
-                    print("ERROR 106: Unable to find BOTH '" + result_area[0] + "' AND '" + result_area[1] + "' in the " + client.open_by_key(SPREADSHEET_ID).title)
-                    return
-            except APIError as e:
-                        # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
-                        api_error = True
-                        api_error_counter -= 1 
-                        if api_error_counter > 0: 
-                            print("Minute Quota for Google Sheets API reached (CLEANING_SPREADSHEET). Will attempt to access again. \n\tPlease wait a moment...\n\tAttempts Left: " + str(api_error_counter))
-                            time.sleep(66)  
-                        else:
-                            print("Unable to Google Sheets API right now. Skipping this process.")
-
-    except AttributeError as e:
-        print("ERROR 102: Unable to find the 'Task' column,'Area/Descriptor' column, 'Frequency' column, and/or 'Amount' column in the '" + client.open_by_key(SPREADSHEET_ID).title + "' Spreadsheet.")
-    except NameError as e:
-        print("ERROR 108: Unable to open the Cleaning Schedule Spreadsheet. Please check the Spreadsheet_ID.")
-
-    # Update the "Last Cleaning Date" column with the new date
-    try:
-        last_cleaning_col = sheet2.find("Last Cleaning Date").col
-        previous_last_date = sheet2.cell(row_index,last_cleaning_col).value
-        sheet2.update_cell(row_index,last_cleaning_col, reformatted_date)
-    except AttributeError as error:
-        print("ERROR 109: Unable to find column with the value: 'Last Cleaning Date'")
-
-    # Update "Next Cleaning Date" column with the new date
-    try:
-        next_cleaning_col = sheet2.find("Next Cleaning Date").col
-        sheet2.update_cell(row_index,next_cleaning_col, next_date)
-    except AttributeError as error:
-        print("ERROR 110: Unable to find column with the value: 'Next Cleaning Date'")
-
-    try:
-        next_cleaning_col = sheet2.find("Second to Last Cleaning Date").col
-        sheet2.update_cell(row_index,next_cleaning_col, previous_last_date)
-    except AttributeError as error:
-        print("ERROR 111: Unable to find column with the value: 'Second to Last Cleaning Date'")
-
-    #Returns a dictionary of the important data
-    return {
-        "Area/Descriptor" : result_area[1],
-        "Task" : result_area[0],
-        "Next Cleaning Date" : next_date,
-        "Last Cleaning Date" : reformatted_date,
+    prefs = {
+        "download.default_directory": download_dir,
+        "download.prompt_for_download":False,
+        "directory_upgrade":True,
     }
 
-#date_values: (int)[day, month, year]
-def calculateNextDate(date_values, freq, amount):
-    constructed_date = datetime(date_values[2], date_values[0], date_values[1])     #Year, Month, Day
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_experimental_option("prefs", prefs)
 
-    if freq == "Week":
-        constructed_date = constructed_date + relativedelta(weeks=amount)
-    elif freq == "Month":
-        constructed_date = constructed_date + relativedelta(months=amount)
-    elif freq == "Quarter":
-        constructed_date = constructed_date + relativedelta(months=(4*amount))
-    else:
-        print("'" + freq + "' is an unsuported frequency type. Please use 'Week', 'Month', or 'Quarter' within the 'Frequency' column of the Master Spreadsheet.")
-        return "UNABLE TO CALCULATE. Check 'Frequency' column."
-    date_values = str(constructed_date).split()[0].split("-")
+    #Launch webdriver instance
+    driver = webdriver.Chrome(options = options)
+    driver.get("https://app.joltup.com/account#/login")
+    time.sleep(3)            # Give time for dynamic elements to load  
 
-    return date_values[1] + "-" + date_values[2] + "-" + date_values[0]
+    driver.find_element(By.ID, "emailAddress").send_keys(EMAIL)
+    driver.find_element(By.ID, "password").send_keys(PASSWORD, Keys.ENTER)
+    time.sleep(4)
 
-from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
-client = gspread.authorize(creds)
-path = os.path.dirname(os.path.realpath(__file__)) + '\\tmp'
+    driver.get("https://app.joltup.com/review/review/listResultsReporting/gridView")
+    time.sleep(6)           # Give time for dynamic elements to load 
 
-readCSVFiles(path, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID)
+    dateRange(driver, startDate, endDate)
+
+    lowercaseNames = [name.lower() for name in listNames]       #Turns desired lists' names lowercase
+    list_of_titles = driver.find_elements(By.CLASS_NAME, "left-column-item-title")  #Gathers all list titles
+
+    #Find desired list and download the CSV file
+    for t in list_of_titles:
+        title = t.find_element(By.TAG_NAME, "span").text.lower()
+        if title in lowercaseNames: 
+            t.click()
+            time.sleep(3)
+
+            driver.find_element(By.CLASS_NAME, "list-download").click()
+            time.sleep(5)
+
+    driver.get("https://app.joltup.com/site/logout")
+
+    time.sleep(1.5)
+    driver.close()
+    print("Closed webdriver instance")
+
+    return download_dir
+
+#ISSUE: Correct value is entered, but site does not store it, leaving it to reset
+def dateRange(driver, startDate, endDate):
+    driver.find_element(By.CLASS_NAME, "date-range-filter").click() #Open up date range picker
+    time.sleep(2)
+
+    #Put in the start date
+    start_field = driver.find_element(By.ID, "input-start")
+    start_field.clear()
+    start_field.send_keys(startDate)
+    # Trigger focus event on another element to ensure the dates are registered
+    driver.find_element(By.CLASS_NAME, "date-range-picker").click()
+    time.sleep(1)
+
+    #Put in the end date
+    end_field = driver.find_element(By.ID, "input-end")
+    end_field.clear()
+    end_field.send_keys(endDate)
+    # Trigger focus event on another element to ensure the dates are registered
+    driver.find_element(By.CLASS_NAME, "date-range-picker").click()
+    time.sleep(1)
+
+    #Find and click on "Done" in the Date-Range picker menu
+    buttons = driver.find_element(By.CLASS_NAME, "date-range-menu").find_element(By.CLASS_NAME, "button-row").find_elements(By.CLASS_NAME, "button")
+    for button in buttons:
+        span_text = button.find_element(By.TAG_NAME, "span").text
+        if span_text.lower() == "done":
+            button.click()
+    time.sleep(5)
+
+#Testing the functions. (Downloads files & lists names of downloaded files)
+#listName = ["BOH Closing Checklist".lower()]
+#print("Path: " + str(downloadCSVs(listName)))
