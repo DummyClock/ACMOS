@@ -19,9 +19,11 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
     date_value = 'Date of Cleaning Task'
     task_value = 'Cleaning Task'
 
+    #Loop through files in directory
     downloadedFiles = os.listdir(path)
     for f in downloadedFiles:
-        # Convert into dataframe
+
+        # Convert csv file into dataframe
         file_path = os.path.join(path, f)
         df = pd.read_csv(file_path).T
         new_header = df.iloc[0]  
@@ -41,7 +43,8 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
                 print("Too many API request made. Taking a quick minute break...")
                 api_request = 0
                 time.sleep(60)
-    return important_results
+        # # testing: os.remove(file_path) Delete file
+    return removeDupCleaningTasks(important_results)
 
 # Will search the Frequency Master Sheet for specific values
 def searchFrequencyMasterSheet(result_date, result_area, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID):
@@ -139,22 +142,21 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
                         found = True
                         print("- Found '" + result_area[0] + "' & '" + result_area[1] + "' on Row: " + str(row_index+1) + " of Cleaning Spreadsheet")
                         break
-
-                # Update for gspread usage
-                row_index += 1 
-                last_cleaning_col += 1
-                next_cleaning_col += 1
-                stl_cleaning_col += 1
                 
                 # If unable to find, add it to the list (because it's data was found in the Master Spreadsheet)
                 if not found:
-                    row_index += 1  #Will be the first empty row
                     #batch.append({'range': cell.Cell(row_index, area_col).address, 'values': result_area[1]},{'range': cell.Cell(row_index, task_col).address, 'values': result_area[0]})
                     sheet2.append_row([result_area[1], result_area[0], next_date, reformatted_date])
                     return returnDict
 
                 #Save the 'outdated' last cleaning date; will use later
                 previous_last_date = all_schedule_values[row_index][next_cleaning_col]
+
+                # Update for gspread usage
+                row_index += 1 
+                last_cleaning_col += 1
+                next_cleaning_col += 1
+                stl_cleaning_col += 1
 
             except APIError as e:
                 # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
@@ -186,6 +188,24 @@ def calculateNextDate(date_values, freq, amount):
 
     return date_values[1] + "-" + date_values[2] + "-" + date_values[0]
 
+# Removes a cleaning task that has a more recent date
+def removeDupCleaningTasks(list_of_dictionaries):
+    for dic in list_of_dictionaries:
+        for d in list_of_dictionaries:
+            if dic.values() == d.values():
+                continue
+            elif dic["Area/Descriptor"] in d.values() and dic["Task"] == d.values():
+                list_of_dictionaries.remove(dic)
+                continue
+    #print(len(list_of_dictionaries))
+    return list_of_dictionaries
+
+def isFound(item1, item2, list_of_containers):
+    for container_object in list_of_containers:
+        if item1 in container_object.values() and item2 in container_object.values():
+            return True
+    return False
+
 def apiTimeOut(api_error_counter):
     # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
     api_error_counter -= 1 
@@ -201,12 +221,11 @@ def formatBatch(row, columns, values):
     for i in range(len(columns)):
         a1_notation[cell.Cell(row, columns[i]).address] = values[i]
     return [{'range': c, 'values':[[value]]} for c, value in a1_notation.items()]
-'''
-from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
+
+"""from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
 client = gspread.authorize(creds)
 path = os.path.dirname(os.path.realpath(__file__)) + '\\tmp'
 
-readCSVFiles(path, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID)
-'''
+readCSVFiles(path, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID)"""
