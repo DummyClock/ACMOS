@@ -35,15 +35,16 @@ def formatTaskName(task):
 def checkStatusString(string, stringName, blockList,divider=True):
     if len(string) > 0:
         if divider == True:
-            return blockList.extend([headerBlock(stringName), markdownBlock(string), dividerBlock()])
+            blockList.extend([headerBlock(stringName), markdownBlock(string), dividerBlock()])
         else:
-            return blockList.extend([headerBlock(stringName), markdownBlock(string)])
+            blockList.extend([headerBlock(stringName), markdownBlock(string)])
+    return blockList
 
 # Set up credentials and other Variables
-#from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
-SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
-MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
-SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
+from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
+#SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+#MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
+#SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
