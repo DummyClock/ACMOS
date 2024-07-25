@@ -107,6 +107,23 @@ def textField(text):
     """
     return {"type": "plain_text","text": text}
 
+def headerBlock(text, returns=True):
+    """
+    Creates or sends a simple plain text block as a header
+
+    Args:
+        text (str): Text to be displayed/sent.
+        returns (bool): If True (default), return the block; if False, send it.
+
+    Returns:
+        dict or int: Either the 'json' formatted block to be sent to Slack (if returns is True) or the status code of the webhook (if returns is False).
+    """
+    block = {"type": "header","text": {"type": "plain_text","text": text}}
+    if(returns == False):
+        return runBlock(block)
+    else:
+        return block
+
 def imageBlock(url, alt_text="", returns=True):
     """
     Creates or sends an image block; This block displays an image
