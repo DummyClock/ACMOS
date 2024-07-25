@@ -4,24 +4,25 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from datetime import date, timedelta
 from google.oauth2.service_account import Credentials
-import gspread
 import os
 import time
 
-#from auth import EMAIL, PASSWORD, SPREADSHEET_ID, SERVICE_KEY_JSON_FILE
+from auth import EMAIL, PASSWORD
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # Gets hidden values from Github Secrets - (Remove this block when testing on a locally)
+'''
 EMAIL = os.environ['EMAIL']
 PASSWORD = os.environ['PASSWORD']
+'''
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
     #Get the default one-week-period dates
     print("Searching for files with the name " + str(listNames))
     if startDate == None and endDate == None:
-        endDate = str(date.today())
+        endDate = str(date.today() - timedelta(days=1))
         startDate = str(date.today() - timedelta(days=7))
-    print("StartDate:"+startDate+"!")
+    print("-StartDate:"+startDate+"!")
 
     #Prepare download location before launching instance of webdriver in headless mode
     download_dir = os.path.dirname(os.path.realpath(__file__))+ '\\tmp'
