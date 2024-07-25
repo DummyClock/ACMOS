@@ -7,14 +7,12 @@ from google.oauth2.service_account import Credentials
 import os
 import time
 
-from auth import EMAIL, PASSWORD
+#from auth import EMAIL, PASSWORD
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # Gets hidden values from Github Secrets - (Remove this block when testing on a locally)
-'''
 EMAIL = os.environ['EMAIL']
 PASSWORD = os.environ['PASSWORD']
-'''
 
 def downloadCSVs(listNames, startDate=None, endDate=None):
     #Get the default one-week-period dates
@@ -104,7 +102,3 @@ def dateRange(driver, startDate, endDate):
         if span_text.lower() == "done":
             button.click()
     time.sleep(5)
-
-#Testing the functions. (Downloads files & lists names of downloaded files)
-#listName = ["BOH Closing Checklist".lower()]
-#print("Path: " + str(downloadCSVs(listName)))
