@@ -7,6 +7,30 @@ from activeTask_manip import prelim_activeTaskModify, post_activeTaskModify
 from google.oauth2.service_account import Credentials
 from slack_blocks import headerBlock, dividerBlock, markdownBlock, runBlocks 
 
+
+#Function used for properly formatting a readable task name for messaging purposes
+def formatTaskName(task):
+    if " (Left)" in task:
+        task = task.replace(" (Left)", "").strip()
+        task = "Left Side of " + task
+    elif " (Right)" in task:
+        task = task.replace(" (Right)", "").strip()
+        task = "Right Side of " + task
+    elif "Jet Plates" in task:
+        task = "Oven " + task
+    elif "#" in task:
+        #Split task name between the descriptor and everything else
+        descriptor, rest_of_name = task.split(' ', 1)
+
+        #Find the first occurence of the specified phrase, and insert descriptor
+        if "Oven" in rest_of_name:
+            object_name, rest = rest_of_name.split("Oven", 1)
+            task = f"{object_name}Oven {descriptor}{rest}"
+        elif "Toaster" in rest_of_name:
+            object_name, rest = rest_of_name.split("Toaster", 1)
+            task = f"{object_name}Toaster {descriptor}{rest}"
+    return task
+
 # Set up credentials and other Variables
 #from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
 SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
@@ -62,28 +86,11 @@ for index, row in ssData.iterrows():
     date = datetime.strptime(row['Next Cleaning Date'], '%m-%d-%Y')
     date = date.strftime('%m/%d/%y').replace('/0', '/').replace(' 0', ' ')
     
-
-    #Format task name for specific situations
+    #Basic task name format
     taskName = row['Area/Descriptor'] + " " + row['Task']
-    if " (Left)" in taskName:
-        taskName = taskName.replace(" (Left)", "").strip()
-        taskName = "Left Side of " + taskName
-    elif " (Right)" in taskName:
-        taskName = taskName.replace(" (Right)", "").strip()
-        taskName = "Right Side of " + taskName
-    elif "Jet Plates" in taskName:
-        taskName = "Oven " + taskName
-    elif "#" in taskName:
-        #Split task name between the descriptor and everything else
-        descriptor, rest_of_name = taskName.split(' ', 1)
-
-        #Find the first occurence of the specified phrase, and insert descriptor
-        if "Oven" in rest_of_name:
-            object_name, rest = rest_of_name.split("Oven", 1)
-            taskName = f"{object_name}Oven {descriptor}{rest}"
-        elif "Toaster" in rest_of_name:
-            object_name, rest = rest_of_name.split("Toaster", 1)
-            taskName = f"{object_name}Toaster {descriptor}{rest}"
+    
+    #Format Task Name based upon specific tasks
+    taskName = formatTaskName(taskName)
 
     output = f"• *{taskName}* (Due: {date})\n"
     status = str(row['Status'])
