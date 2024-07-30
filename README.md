@@ -4,7 +4,7 @@ ACMOS is a project aimed at automating the cleaning and maintenance scheduling p
 
 ## Table of Contents
 - [Project Description](#project-description)
-- [Planned Features](#features)
+- [Features](#features)
 - [To-Do List](#to-do-list)
 
 ## Project Description
