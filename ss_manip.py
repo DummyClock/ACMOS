@@ -175,7 +175,9 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
 def calculateNextDate(date_values, freq, amount):
     constructed_date = datetime(date_values[2], date_values[0], date_values[1])     #Year, Month, Day
 
-    if freq == "Week":
+    if freq == "Day":
+        constructed_date = constructed_date + relativedelta(days=amount)
+    elif freq == "Week":
         constructed_date = constructed_date + relativedelta(weeks=amount)
     elif freq == "Month":
         constructed_date = constructed_date + relativedelta(months=amount)
