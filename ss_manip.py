@@ -35,6 +35,8 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
         task_value_col = df.columns.get_loc(task_value)
         api_request = 0
         for rows in range(df.shape[0]):
+            if rows == 0:    # Row 0 is the header row, skip it
+                continue
             result1 = df.iloc[rows,date_value_col].split()
             result2 = df.iloc[rows,task_value_col].split(" - ")
             important_results.append(searchFrequencyMasterSheet(result1, result2, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_REFERENCE))
@@ -166,7 +168,7 @@ def updateCleaningScheduleSheet(reformatted_date, next_date, result_area, client
 
     # Update the "Last Cleaning Date" column with the new date
     batch = formatBatch(row_index, [last_cleaning_col, next_cleaning_col, stl_cleaning_col], [reformatted_date, next_date, previous_last_date])
-    sheet2.batch_update(batch, value_input_option="RAW")
+    sheet2.batch_update(batch, value_input_option="USER_ENTERED")
 
     #Returns a dictionary of the important data
     return returnDict
