@@ -26,7 +26,6 @@ ACMOS automates the collection of cleaning task completion data from Jolt and se
 - Further Testing to ensure it works, and to work out any issues
 - Update the current Jolt checklist to include all tasks
    - Maybe we could automate this in some fashion?
-- Fix Apostrophe's in the start of each date after ss_manip.py run through the spreadsheet
 - Figure out how to handle weekly tasks; May not even be handled within this project, However bi-weekly can be.
   - Spamming the slack channel could result in it being ignored.
   - Accessing Jolt everyday could be accessing it too much.
