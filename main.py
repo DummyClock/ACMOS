@@ -16,19 +16,11 @@ def formatTaskName(task):
     elif " (Right)" in task:
         task = task.replace(" (Right)", "").strip()
         task = "Right Side of " + task
-    elif "Jet Plates" in task:
-        task = "Oven " + task
     elif "#" in task:
-        #Split task name between the descriptor and everything else
-        descriptor, rest_of_name = task.split(' ', 1)
-
-        #Find the first occurence of the specified phrase, and insert descriptor
-        if "Oven" in rest_of_name:
-            object_name, rest = rest_of_name.split("Oven", 1)
-            task = f"{object_name}Oven {descriptor}{rest}"
-        elif "Toaster" in rest_of_name:
-            object_name, rest = rest_of_name.split("Toaster", 1)
-            task = f"{object_name}Toaster {descriptor}{rest}"
+        #Split task name between the descriptor, equipment, and everything else
+        descriptor, equipment, rest_of_name = task.split(' ', 2)
+        #Rearrange the name
+        task = equipment + " " + descriptor + " " + rest_of_name
     return task
 
 #Checks a Status' output string to see if a task exists there
@@ -41,10 +33,10 @@ def checkStatusString(string, stringName, blockList,divider=True):
     return blockList
 
 # Set up credentials and other Variables
-from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
-#SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
-#MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
-#SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
+#from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
+SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
+SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
