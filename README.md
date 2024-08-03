@@ -24,8 +24,9 @@ ACMOS automates the collection of cleaning task completion data from Jolt and se
 - Cleanup Repository
     - Remove excess files or move them to an archive folder or archive branch
 - Further Testing to ensure it works, and to work out any issues
-- Update the current Jolt checklist to include all tasks
-   - Maybe we could automate this in some fashion?
 - Figure out how to handle weekly tasks; May not even be handled within this project, However bi-weekly can be.
   - Spamming the slack channel could result in it being ignored.
   - Accessing Jolt everyday could be accessing it too much.
+- Desktop Application for a more user-friendly experience modifying the master, active, and schedule sheets properly and validating the data.
+  - Planned 'Stack': React, Electron, 'gsheets', Nodejs.
+- Implement an additonal layer to Overdue, which reminds on a slightly more frequent basis 2 or more weeks after the initial due date.
