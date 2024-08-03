@@ -30,3 +30,5 @@ ACMOS automates the collection of cleaning task completion data from Jolt and se
 - Desktop Application for a more user-friendly experience modifying the master, active, and schedule sheets properly and validating the data.
   - Planned 'Stack': React, Electron, 'gsheets', Nodejs.
 - Implement an additonal layer to Overdue, which reminds on a slightly more frequent basis 2 or more weeks after the initial due date.
+- Run the program at random interval 3 hours prior to 12:00pm, and send slack messages at 12:00pm
+- Fix dividers
