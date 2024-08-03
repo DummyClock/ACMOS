@@ -36,5 +36,5 @@ jobs:
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           MASTER_SPREADSHEET_ID: ${{ secrets.MASTER_SPREADSHEET_ID }}
         run: |
-          python jolt_scraper_v4.py
+          python main.py
         
