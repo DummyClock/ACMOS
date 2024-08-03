@@ -16,11 +16,6 @@ def formatTaskName(task):
     elif " (Right)" in task:
         task = task.replace(" (Right)", "").strip()
         task = "Right Side of " + task
-    elif "#" in task:
-        #Split task name between the descriptor, equipment, and everything else
-        descriptor, equipment, rest_of_name = task.split(' ', 2)
-        #Rearrange the name
-        task = equipment + " " + descriptor + " " + rest_of_name
     return task
 
 #Checks a Status' output string to see if a task exists there
