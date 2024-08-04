@@ -3,7 +3,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from datetime import date, timedelta
-from google.oauth2.service_account import Credentials
 import os
 import time
 
@@ -34,44 +33,57 @@ def downloadCSVs(listNames, startDate=None, endDate=None):
         "download.prompt_for_download":False,
         "directory_upgrade":True,
     }
+    
+    # Download files with desired names; will reattempt 3x if a connection error occurs
+    attemps = 0
+    maxAttempts = 3
+    errorOccured = True
+    while errorOccured and attemps < maxAttempts:
+        try:
+            options = Options()
+            options.add_argument("--headless=new")
+            options.add_experimental_option("prefs", prefs)
 
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_experimental_option("prefs", prefs)
+            #Launch webdriver instance
+            driver = webdriver.Chrome(options = options)
+            driver.get("https://app.joltup.com/account#/login")
+            time.sleep(3)            # Give time for dynamic elements to load  
 
-    #Launch webdriver instance
-    driver = webdriver.Chrome(options = options)
-    driver.get("https://app.joltup.com/account#/login")
-    time.sleep(3)            # Give time for dynamic elements to load  
+            driver.find_element(By.ID, "emailAddress").send_keys(EMAIL)
+            driver.find_element(By.ID, "password").send_keys(PASSWORD, Keys.ENTER)
+            time.sleep(4)
 
-    driver.find_element(By.ID, "emailAddress").send_keys(EMAIL)
-    driver.find_element(By.ID, "password").send_keys(PASSWORD, Keys.ENTER)
-    time.sleep(4)
+            driver.get("https://app.joltup.com/review/review/listResultsReporting/gridView")
+            time.sleep(6)           # Give time for dynamic elements to load 
 
-    driver.get("https://app.joltup.com/review/review/listResultsReporting/gridView")
-    time.sleep(6)           # Give time for dynamic elements to load 
+            dateRange(driver, startDate, endDate)
 
-    dateRange(driver, startDate, endDate)
+            lowercaseNames = [name.lower() for name in listNames]       #Turns desired lists' names lowercase
+            list_of_titles = driver.find_elements(By.CLASS_NAME, "left-column-item-title")  #Gathers all list titles
 
-    lowercaseNames = [name.lower() for name in listNames]       #Turns desired lists' names lowercase
-    list_of_titles = driver.find_elements(By.CLASS_NAME, "left-column-item-title")  #Gathers all list titles
+            #Find desired list and download the CSV file
+            for t in list_of_titles:
+                title = t.find_element(By.TAG_NAME, "span").text.lower()
+                if title in lowercaseNames: 
+                    t.click()
+                    time.sleep(3)
 
-    #Find desired list and download the CSV file
-    for t in list_of_titles:
-        title = t.find_element(By.TAG_NAME, "span").text.lower()
-        if title in lowercaseNames: 
-            t.click()
-            time.sleep(3)
+                    driver.find_element(By.CLASS_NAME, "list-download").click()
+                    time.sleep(5)
+            driver.get("https://app.joltup.com/site/logout")
+            time.sleep(1.5)
+            driver.close()
+            print("Closed webdriver instance")
+            return download_dir
+        except WebDriverException as e:
+            print("Connection error occured. Reattempting to launch in a minute...")
+            errorOccured = True
+            attemps += 1
+            clearDirectory(download_dir)   # Delete temp files; attempt to redownload after the wait time
+            time.sleep(60)
 
-            driver.find_element(By.CLASS_NAME, "list-download").click()
-            time.sleep(5)
-
-    driver.get("https://app.joltup.com/site/logout")
-
-    time.sleep(1.5)
-    driver.close()
-    print("Closed webdriver instance")
-
+    #If connection error occured too many times, default to
+    print("Unable to connect to selenium.")
     return download_dir
 
 #ISSUE: Correct value is entered, but site does not store it, leaving it to reset
