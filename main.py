@@ -27,13 +27,6 @@ def checkStatusString(string, stringName, blockList,divider=True):
             blockList.extend([headerBlock(stringName), markdownBlock(string)])
     return blockList
 
-#Removes all files from a directory
-def clearDirectory(path):
-    print("Clearing the directory " + path)
-    for filename in os.listdir(path):
-        file_path = os.path.join(path, filename)
-        os.remove(file_path)
-
 # Set up credentials and other Variables
 #from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
 SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
@@ -51,23 +44,7 @@ prelim_activeTaskModify(client, SPREADSHEET_ID)
 time.sleep(5)
 
 #Try Download Completed Jolt List Data
-attemps = 0
-maxAttempts = 3
-errorOccured = True
-while errorOccured and attemps < maxAttempts:
-    try:
-        errorOccured = False
-        path = downloadCSVs(listNames)
-    except WebDriverException as e:
-        print("A connection error occured. Reattempting to launch in a minute...")
-        errorOccured = True
-        attemps += 1
-
-        # If the new directory has been created, clear it before reattempting downloads
-        p = os.path.dirname(os.path.realpath(__file__)) + '\\tmp'
-        if os.path.exists(p):   
-            clearDirectory(p)
-
+path = downloadCSVs(listNames)
 
 #Gathers a dictionary of cleaned tasks and updates cleaning dates
 result = readCSVFiles(path, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID)       #Prints a dictionary of the important data types
