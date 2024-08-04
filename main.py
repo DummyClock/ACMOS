@@ -1,4 +1,4 @@
-import gspread, time, os
+import gspread, time, os, json
 import pandas as pd
 from datetime import date, datetime
 from ss_manip import readCSVFiles
@@ -31,7 +31,7 @@ def checkStatusString(string, stringName, blockList,divider=True):
 #from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
 SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
 MASTER_SPREADSHEET_ID = os.environ['MASTER_SPREADSHEET_ID']
-SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
+SERVICE_KEY_JSON_FILE = json.loads(os.environ["SERVICE_KEY_JSON_FILE"])
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
