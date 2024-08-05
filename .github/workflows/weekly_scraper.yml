@@ -35,6 +35,7 @@ jobs:
           SERVICE_KEY_JSON_FILE: ${{ secrets.SERVICE_KEY_JSON_FILE }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           MASTER_SPREADSHEET_ID: ${{ secrets.MASTER_SPREADSHEET_ID }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
           python main.py
         
