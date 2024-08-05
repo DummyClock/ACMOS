@@ -19,13 +19,10 @@ def formatTaskName(task):
     return task
 
 #Checks a Status' output string to see if a task exists there
-def checkStatusString(string, stringName, blockList,divider=True):
+def checkStatusString(string, stringName):
     if len(string) > 0:
-        if divider == True:
-            blockList.extend([headerBlock(stringName), markdownBlock(string), dividerBlock()])
-        else:
-            blockList.extend([headerBlock(stringName), markdownBlock(string)])
-    return blockList
+        return [headerBlock(stringName), markdownBlock(string)]
+    return []
 
 # Set up credentials and other Variables
 #from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID, MASTER_SPREADSHEET_ID
@@ -102,12 +99,22 @@ for index, row in ssData.iterrows():
 #List of blocks to send to Slack
 blocks = []
 
-#Check if there are any blocks to send for each status
-blocks = checkStatusString(overdue, "OVERDUE", blocks)
-blocks = checkStatusString(due, "DUE", blocks)
-blocks = checkStatusString(upcoming, "UPCOMING", blocks)
-blocks = checkStatusString(errored, "INVALID STATUS", blocks, divider=False)
+#List of status names and their contents
+statuses = [
+    ('OVERDUE', overdue),
+    ('DUE', due),
+    ('UPCOMING', upcoming),
+    ('INVALID STATUS', errored)
+]
+
+#Iterate through above list and append proper data to blocks
+for i, (status_name, content) in enumerate(statuses):
+    status_blocks = checkStatusString(content, status_name)
+    if status_blocks:
+        if blocks:
+            blocks.append(dividerBlock())
+        blocks.extend(status_blocks)
 
 #Checks if there's any blocks to run
-if len(blocks) != 0:
+if blocks:
     runBlocks(blocks)
