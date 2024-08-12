@@ -1,8 +1,5 @@
-import pandas as pd
-import gspread
-import time
+import pandas as pd, gspread, time, re
 from datetime import date
-import re
 from google.oauth2.service_account import Credentials
 from datetime import date, timedelta
 
@@ -16,14 +13,21 @@ def prelim_activeTaskModify(client, ss_id):
     print("\nUpdating Statuses in Active-Tasks")
     while api_error and api_error_counter > 0:
         try:
+            api_error = False
+
+            # Get cells that contain "DUE" + "UPCOMING"
             sheet = client.open_by_key(ss_id).get_worksheet(1) #Get's second sheet
-            matches_due = sheet.findall("DUE")
-            for cell in matches_due:
+            due_matches = sheet.findall("DUE")
+            upc_matches = sheet.findall("UPCOMING")
+
+            # Edit cells
+            for cell in due_matches:
                 cell.value = "OVERDUE"
-            matches_upc = sheet.findall("UPCOMING")
-            for cell in matches_upc:
+            for cell in upc_matches:
                 cell.value = "DUE"
-            cells_to_update = matches_due + matches_upc
+            cells_to_update = due_matches + upc_matches
+
+            # If there are cells to update, perform the update
             if not cells_to_update:
                 return
             else:
@@ -31,6 +35,7 @@ def prelim_activeTaskModify(client, ss_id):
         except gspread.exceptions.APIError as e:
             # If API Error occurs, reattempt to access Google Sheets API (MAX ATTEMPS = 3)
             api_error = apiTimeOut(api_error_counter)
+            api_error = True
 
 #Adds new UPCOMING tasks
 def post_activeTaskModify(client, ss_id, results, startDate = None, endDate = None):
@@ -131,3 +136,15 @@ def isFound(item1, item2, list_of_containers):
         if item1 in container_object.values() and item2 in container_object.values():
             return True
     return False
+
+
+if __name__ == "__main__":
+    from auth import SERVICE_KEY_JSON_FILE, SPREADSHEET_ID
+    #SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+    #SERVICE_KEY_JSON_FILE = os.environ['SERVICE_KEY_JSON_FILE']
+
+    SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+    creds = Credentials.from_service_account_info(SERVICE_KEY_JSON_FILE, scopes=SCOPES)
+    client = gspread.authorize(creds)
+    prelim_activeTaskModify(client, SPREADSHEET_ID)
+    #post_activeTaskModify(client, SPREADSHEET_ID)
