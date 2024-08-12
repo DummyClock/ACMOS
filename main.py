@@ -48,7 +48,7 @@ result = readCSVFiles(path, client, SPREADSHEET_ID, MASTER_SPREADSHEET_ID)      
 time.sleep(5)
 
 #Update the Active Task Spreadsheet with upcoming tasks and removes completed tasks
-post_activeTaskModify(client, SPREADSHEET_ID, result, date(2024,7,31), date(2024,8,20))
+post_activeTaskModify(client, SPREADSHEET_ID, result)
 
 # Slack Messaging and Data processing
 
