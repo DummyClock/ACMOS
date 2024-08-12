@@ -2,7 +2,7 @@ name: Run Jolt Scrapper Script
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # Runs at Midnight on Sunday (UTC Time)
+    - cron: '0 3 * * 0'  # Runs at Midnight on Sunday (UTC Time)
   workflow_dispatch:
 
 jobs:
