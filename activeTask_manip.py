@@ -92,9 +92,7 @@ def post_activeTaskModify(client, ss_id, results, startDate = None, endDate = No
             active_sheet.append_rows(upcomingCleaning, value_input_option="USER_ENTERED")
 
             #Delete Rows
-            print("\nPreparing to remove completed tasks from Active-Task sheet. \n\tPlease wait a minute for the process to start...")
-            time.sleep(60)        #wait one minue
-            print("Beginning the removing completed item process. Please wait a moment..")
+            print("Removing completed items. Please wait a moment...")
             deleteRows(full_cleaning_sheet.get_all_values(), active_sheet, results)
 
         except gspread.exceptions.APIError as e:
