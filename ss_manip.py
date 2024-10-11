@@ -63,6 +63,7 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
 
         # Commit batch update to cleaning ws
         body = {"requests": requestBatch}
+        print(body)        #testing line
         ss = client.open_by_key(ID_OF_SPREADSHEET_TO_EDIT)
         ss.batch_update(body)
 
