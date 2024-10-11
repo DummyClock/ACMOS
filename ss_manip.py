@@ -30,10 +30,21 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
         df.columns = new_header  
 
         # Get Sheet values
-        masterWS = client.open_by_key(ID_OF_SPREADSHEET_TO_REFERENCE).sheet1  #'sheet1' refers to the name of the actual sheet
-        all_master_values = masterWS.get_all_values()
-        cleaningWS = client.open_by_key(ID_OF_SPREADSHEET_TO_EDIT).sheet1
-        all_schedule_values = cleaningWS.get_all_values()
+        api_e_attempt = 3
+        while api_e_attempt > 0:
+            try:
+                masterWS = client.open_by_key(ID_OF_SPREADSHEET_TO_REFERENCE).sheet1  #'sheet1' refers to the name of the actual sheet
+                all_master_values = masterWS.get_all_values()
+                cleaningWS = client.open_by_key(ID_OF_SPREADSHEET_TO_EDIT).sheet1
+                all_schedule_values = cleaningWS.get_all_values()
+                break       # API access was succesful, then bypass the check
+            except APIError:
+                api_e_attempt = api_e_attempt - 1
+                if api_e_attempt > 0:
+                    print("API ERROR OCCURED! Reattempting to access in 1 minute and 30 seconds...")
+                    time.sleep(90)
+                else:
+                    raise Exception("Failed to connect to API at this moment. Please refer to the APIError's documentation: \n\thttps://docs.gspread.org/en/latest/api/exceptions.html")
 
         # Read each row for specific values
         date_value_col = df.columns.get_loc(date_value)
