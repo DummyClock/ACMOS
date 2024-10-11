@@ -51,8 +51,6 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
         date_value_col = df.columns.get_loc(date_value)
         task_value_col = df.columns.get_loc(task_value)
         for rows in range(df.shape[0]):
-            if rows == 0:
-                continue
             date_result = df.iloc[rows,date_value_col].split()
             task_result = df.iloc[rows,task_value_col].split(" - ")
 
@@ -62,10 +60,21 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
             requestBatch.append(results[1])
 
         # Commit batch update to cleaning ws
+        # Commit batch update to cleaning ws
         body = {"requests": requestBatch}
-        print(body)        #testing line
-        ss = client.open_by_key(ID_OF_SPREADSHEET_TO_EDIT)
-        ss.batch_update(body)
+        api_e_attempt = 3
+        while api_e_attempt > 0:
+            try:
+                ss = client.open_by_key(ID_OF_SPREADSHEET_TO_EDIT)
+                ss.batch_update(body)
+            except APIError as e:
+                api_e_attempt = api_e_attempt - 1
+                if api_e_attempt > 0:
+                    print("API ERROR OCCURED! Reattempting to access in 1 minute and 30 seconds...")
+                    time.sleep(90)
+                else:
+                    print("APIError Code: " + f"APIError: {e.response.status_code}")
+                    raise Exception("Failed to connect to API at this moment. Please refer to the APIError's documentation: \n\thttps://docs.gspread.org/en/latest/api/exceptions.html")
 
     # Return dict
     return removeDupCleaningTasks(important_results)
