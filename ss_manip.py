@@ -38,12 +38,13 @@ def readCSVFiles(path, client, ID_OF_SPREADSHEET_TO_EDIT, ID_OF_SPREADSHEET_TO_R
                 cleaningWS = client.open_by_key(ID_OF_SPREADSHEET_TO_EDIT).sheet1
                 all_schedule_values = cleaningWS.get_all_values()
                 break       # API access was succesful, then bypass the check
-            except APIError:
+            except APIError as e:
                 api_e_attempt = api_e_attempt - 1
                 if api_e_attempt > 0:
                     print("API ERROR OCCURED! Reattempting to access in 1 minute and 30 seconds...")
                     time.sleep(90)
                 else:
+                    print("APIError Code: " + f"APIError: {e.response.status_code}")
                     raise Exception("Failed to connect to API at this moment. Please refer to the APIError's documentation: \n\thttps://docs.gspread.org/en/latest/api/exceptions.html")
 
         # Read each row for specific values
